@@ -1,0 +1,577 @@
+# Backend Stories
+
+*Input: ADR-001, DATA-MODEL.md, EVAL-SERVICE-DESIGN.md*
+
+---
+
+## Part 1: API Contract
+
+This contract is the primary input for frontend development. All protected endpoints require a valid Clerk session JWT in the `Authorization: Bearer <token>` header.
+
+---
+
+### Authentication Model
+
+Auth is handled by Clerk. The flow from the backend's perspective:
+
+1. The frontend authenticates the user via Clerk's SDK (GitHub OAuth).
+2. Clerk issues a signed JWT (session token) to the browser.
+3. The frontend attaches it to every API request as `Authorization: Bearer <token>`.
+4. The backend validates the JWT using Clerk's JWKS endpoint and extracts the user's Clerk ID.
+5. On each authenticated request, if no User row exists for that Clerk ID, one is created.
+
+The backend exposes no `/auth/*` redirect endpoints. Clerk owns the OAuth flow entirely.
+
+---
+
+### Endpoint Summary
+
+| Method | Path | Auth | Rate Limit | Description |
+|--------|------|------|------------|-------------|
+| GET | `/health` | None | — | Health check |
+| GET | `/api/me` | Required | — | Current user profile |
+| GET | `/api/exercises` | Required | — | All exercises grouped by chapter |
+| GET | `/api/exercises/:id` | Required | — | Single exercise |
+| POST | `/api/submissions` | Required | 10/min per user, 20/min per IP | Submit code for evaluation |
+| GET | `/api/submissions` | Required | — | Submission history for an exercise |
+| GET | `/api/progress` | Required | — | User's progress across all exercises |
+
+---
+
+### GET /health
+
+No auth required. Used by PaaS health checks.
+
+**Response 200:**
+```
+{ "status": "ok" }
+```
+
+---
+
+### GET /api/me
+
+Returns the authenticated user's profile. Creates a User row on first call if one does not exist.
+
+**Response 200:**
+```
+{
+  "id":         number,
+  "username":   string,
+  "avatarUrl":  string | null,
+  "email":      string | null
+}
+```
+
+**Errors:**
+
+| Code | Condition |
+|------|-----------|
+| 401 | Missing or invalid JWT |
+
+---
+
+### GET /api/exercises
+
+Returns all exercises grouped by chapter, in display order. Strips `hiddenTests` and `canonicalSolution`.
+
+**Response 200:**
+```
+{
+  "chapters": [
+    {
+      "slug":        string,
+      "title":       string,
+      "description": string,
+      "exercises": [
+        {
+          "id":               string,
+          "title":            string,
+          "chapter":          string,
+          "order":            number,
+          "learningObjective": string,
+          "stubCode":         string,
+          "hints":            string[]
+        }
+      ]
+    }
+  ]
+}
+```
+
+Chapters are ordered by `orderNum`. Exercises within each chapter are ordered by `orderInChapter`.
+
+**Errors:**
+
+| Code | Condition |
+|------|-----------|
+| 401 | Missing or invalid JWT |
+
+---
+
+### GET /api/exercises/:id
+
+Returns a single exercise by slug. Same shape as a single exercise object from the list endpoint.
+
+**Path parameter:** `id` — exercise slug (e.g. `hello-world`)
+
+**Response 200:**
+```
+{
+  "id":                string,
+  "title":             string,
+  "chapter":           string,
+  "order":             number,
+  "learningObjective": string,
+  "stubCode":          string,
+  "hints":             string[]
+}
+```
+
+**Errors:**
+
+| Code | Condition |
+|------|-----------|
+| 401 | Missing or invalid JWT |
+| 404 | No exercise with that slug |
+
+---
+
+### POST /api/submissions
+
+Submits user code for an exercise. Calls Judge0 synchronously and waits for the result. Rate limited.
+
+**Request body:**
+```
+{
+  "exerciseId": string,   // exercise slug
+  "code":       string    // user-submitted Haskell; max 50 KB
+}
+```
+
+**Response 200:**
+```
+{
+  "id":          number,
+  "exerciseId":  string,
+  "status":      "pass" | "fail" | "compile_error" | "timeout" | "runtime_error" | "error",
+  "output":      string,
+  "passedCount": number,
+  "failedCount": number,
+  "evaluatedAt": string   // ISO 8601 timestamp
+}
+```
+
+**Errors:**
+
+| Code | Condition |
+|------|-----------|
+| 400 | Malformed request body |
+| 401 | Missing or invalid JWT |
+| 404 | Unknown exerciseId |
+| 413 | Code exceeds 50 KB |
+| 422 | Validation error |
+| 429 | Rate limit exceeded (`Retry-After` header included) |
+| 502 | Judge0 unreachable |
+| 504 | Judge0 timed out |
+
+---
+
+### GET /api/submissions
+
+Returns submission history for the authenticated user on a specific exercise, newest first.
+
+**Query parameter:** `exercise_id` (required) — exercise slug
+
+**Response 200:**
+```
+{
+  "submissions": [
+    {
+      "id":          number,
+      "exerciseId":  string,
+      "status":      "pass" | "fail" | "compile_error" | "timeout" | "runtime_error" | "error",
+      "output":      string,
+      "passedCount": number,
+      "failedCount": number,
+      "evaluatedAt": string
+    }
+  ]
+}
+```
+
+Note: `code` is not returned in history responses. Users see their current editor state, not past submissions.
+
+**Errors:**
+
+| Code | Condition |
+|------|-----------|
+| 400 | Missing `exercise_id` |
+| 401 | Missing or invalid JWT |
+| 404 | Unknown exercise_id |
+
+---
+
+### GET /api/progress
+
+Returns the authenticated user's completion state across all exercises.
+
+**Response 200:**
+```
+{
+  "progress": [
+    {
+      "exerciseId":      string,
+      "status":          "not_started" | "attempted" | "passed",
+      "firstPassedAt":   string | null,   // ISO 8601
+      "lastSubmittedAt": string | null    // ISO 8601; null if never submitted
+    }
+  ]
+}
+```
+
+All exercises are included, even those with `not_started` status. Ordered to match the exercise list.
+
+**Errors:**
+
+| Code | Condition |
+|------|-----------|
+| 401 | Missing or invalid JWT |
+
+---
+
+### Error Response Shape
+
+All error responses use this envelope:
+
+```
+{
+  "error": string,   // human-readable message
+  "code":  string    // machine-readable code, e.g. "rate_limit_exceeded"
+}
+```
+
+---
+
+## Part 2: User Stories
+
+Stories are sized for a Haskell beginner with LLM assistance:
+- **S** — ~1–3 hours
+- **M** — ~3–6 hours
+- **L** — ~6–12 hours
+
+---
+
+## Phase 1: Walking Skeleton
+
+**Goal:** The app boots, one hardcoded exercise is served, a submission reaches Judge0 and returns a result. Rate limiting is in place. No database yet.
+
+---
+
+### BE-01: Scaffold Servant project
+
+**Size:** M
+
+**Description:**
+Set up the Cabal project structure for the backend. Configure Servant, Wai, and Warp. The server starts and returns a response from the health endpoint.
+
+**Acceptance criteria:**
+- [ ] `cabal build` succeeds with no warnings
+- [ ] `cabal run` starts a server on a configurable port (default 8080)
+- [ ] `GET /health` returns `{"status":"ok"}` with status 200
+- [ ] Port is read from an environment variable (`PORT`) with a fallback default
+- [ ] The Servant API type is defined in its own module (`API.hs` or similar)
+
+---
+
+### BE-02: Hardcoded exercise endpoint
+
+**Size:** S
+
+**Description:**
+Implement `GET /api/exercises/:id` with a single hardcoded exercise (the `hello-world` exercise from the curriculum). No database. The response must match the API contract exactly — `hiddenTests` and `canonicalSolution` are not present in the response.
+
+**Acceptance criteria:**
+- [ ] `GET /api/exercises/hello-world` returns the hello-world exercise in the specified shape
+- [ ] `GET /api/exercises/unknown` returns 404 with the standard error envelope
+- [ ] `GET /api/exercises` returns a chapters list containing the one hardcoded exercise
+- [ ] Response is valid JSON matching the contract shapes defined in Part 1
+
+---
+
+### BE-03: Judge0 HTTP client
+
+**Size:** M
+
+**Description:**
+Implement a module that calls the Judge0 cloud API to submit Haskell code and retrieve the result. The module is responsible for: constructing the combined source (user code + test harness), sending to Judge0, polling for completion (or using synchronous mode), and mapping the Judge0 response to the internal `SubmissionStatus` type.
+
+**Acceptance criteria:**
+- [ ] The Judge0 API key is read from an environment variable (`JUDGE0_API_KEY`), never hardcoded
+- [ ] The combined source is assembled correctly: user module declaration + test suite imports + user definitions + test body
+- [ ] All Judge0 status codes map to the internal `SubmissionStatus` type
+- [ ] HSpec output is parsed to extract `passedCount` and `failedCount`
+- [ ] Judge0 unavailability returns a structured error, not an unhandled exception
+- [ ] A timeout from Judge0 is handled gracefully (maps to `StatusTimeout`)
+
+---
+
+### BE-04: Submission endpoint (walking skeleton)
+
+**Size:** M
+
+**Description:**
+Implement `POST /api/submissions` using the hardcoded exercise and the Judge0 client. No database persistence yet — the response is returned directly from Judge0. Wire the endpoint into the Servant API type.
+
+**Acceptance criteria:**
+- [ ] Submitting correct code for `hello-world` returns `status: "pass"` with correct counts
+- [ ] Submitting code with a syntax error returns `status: "compile_error"` with sanitized output
+- [ ] Submitting an unknown `exerciseId` returns 404
+- [ ] Code exceeding 50 KB returns 413 before calling Judge0
+- [ ] The response shape matches the API contract exactly
+- [ ] Judge0 is not called if the request fails validation
+
+---
+
+### BE-05: Per-IP rate limiting on submissions
+
+**Size:** S
+
+**Description:**
+Add rate limiting middleware to `POST /api/submissions`. At this phase, limit by remote IP address. Limit: 20 requests per minute per IP.
+
+**Acceptance criteria:**
+- [ ] The 21st submission request from the same IP within 60 seconds returns 429
+- [ ] The 429 response includes a `Retry-After` header (seconds until the window resets)
+- [ ] The 429 response body uses the standard error envelope with code `"rate_limit_exceeded"`
+- [ ] Rate limit state resets after the window expires
+- [ ] The limit is configurable via an environment variable (`RATE_LIMIT_PER_IP`) with a sensible default
+
+---
+
+## Phase 2: Data Layer
+
+**Goal:** Real database with Persistent migrations. Exercises are seeded from `CURRICULUM.json`. Submissions are persisted. History endpoint works.
+
+---
+
+### BE-06: Database connection and migrations
+
+**Size:** M
+
+**Description:**
+Configure Persistent and postgresql-simple. On startup, run `migrateAll` to apply the schema from `DATA-MODEL.md`. The database URL is read from an environment variable.
+
+**Acceptance criteria:**
+- [ ] `DATABASE_URL` environment variable is read on startup; server fails fast with a clear message if it is missing
+- [ ] `migrateAll` runs on startup and the schema matches `DATA-MODEL.md`
+- [ ] Migrations are idempotent — running twice does not error
+- [ ] The database connection pool size is configurable (`DB_POOL_SIZE`, default 10)
+- [ ] A failed database connection on startup causes the server to exit with a non-zero code and a clear log message
+
+---
+
+### BE-07: Exercise seeding from CURRICULUM.json
+
+**Size:** M
+
+**Description:**
+On startup (after migrations), read `CURRICULUM.json` and upsert all chapters and exercises into the database. The seed is idempotent — running it again updates changed fields without duplicating rows.
+
+**Acceptance criteria:**
+- [ ] All 30 exercises and their 6 chapters are present in the database after startup
+- [ ] Upserting uses `UniqueExerciseSlug` and `UniqueChapterSlug` — no duplicates on restart
+- [ ] `hiddenTests` and `canonicalSolution` are stored in the database
+- [ ] Exercise `hints` are stored and retrieved correctly as a `[Text]` JSONB field
+- [ ] A malformed or missing `CURRICULUM.json` causes the server to exit with a clear error
+
+---
+
+### BE-08: Exercise endpoints from database
+
+**Size:** S
+
+**Description:**
+Replace the hardcoded exercise responses from BE-02 with database queries using Persistent and Esqueleto.
+
+**Acceptance criteria:**
+- [ ] `GET /api/exercises` queries the DB and returns all exercises grouped by chapter in correct order
+- [ ] `GET /api/exercises/:id` queries by slug and returns 404 if not found
+- [ ] `hiddenTests` and `canonicalSolution` are present in the DB row but absent from all API responses
+- [ ] Response shape is identical to BE-02's output
+
+---
+
+### BE-09: Submission persistence
+
+**Size:** S
+
+**Description:**
+After receiving a result from Judge0, persist the submission to the `submission` table before returning the response.
+
+**Acceptance criteria:**
+- [ ] Every completed submission (including failures and errors) creates a row in `submission`
+- [ ] The submission row records: `userId` (null for now, updated in Phase 3), `exerciseId`, `code`, `status`, `output`, `passedCount`, `failedCount`, `createdAt`
+- [ ] The `id` of the persisted row is returned in the API response
+- [ ] Judge0 failures (502, 504) do not create a submission row
+
+---
+
+### BE-10: Submission history endpoint
+
+**Size:** S
+
+**Description:**
+Implement `GET /api/submissions?exercise_id=:id`, querying the `submission` table for the authenticated user's past submissions on a given exercise.
+
+**Acceptance criteria:**
+- [ ] Returns submissions for the given exercise slug, newest first
+- [ ] Returns 400 if `exercise_id` is missing
+- [ ] Returns 404 if the exercise slug is unknown
+- [ ] `code` field is not included in history responses
+- [ ] Returns an empty array (not 404) if the exercise exists but has no submissions yet
+
+---
+
+## Phase 3: Auth
+
+**Goal:** GitHub OAuth via Clerk. All non-health endpoints require a valid Clerk JWT. Per-user rate limiting added to submissions. `UserProgress` is created on first submission.
+
+---
+
+### BE-11: Clerk JWT validation middleware
+
+**Size:** L
+
+**Description:**
+Implement a Servant auth middleware that validates the Clerk session JWT on each protected request. The middleware fetches Clerk's JWKS, caches the keys, validates the JWT signature and expiry, and extracts the Clerk user ID and username from the claims. Invalid or missing tokens return 401.
+
+**Acceptance criteria:**
+- [ ] `CLERK_JWKS_URL` (or `CLERK_PUBLISHABLE_KEY`) is read from environment; server fails fast if missing
+- [ ] A valid Clerk JWT allows the request through; the user's Clerk ID is available to handlers
+- [ ] An expired JWT returns 401 with code `"unauthorized"`
+- [ ] A malformed or missing `Authorization` header returns 401
+- [ ] JWKS are cached in memory and refreshed on a configurable interval (`JWKS_REFRESH_SECONDS`, default 3600); a single key fetch failure does not crash the server
+- [ ] All routes except `GET /health` require a valid JWT
+
+---
+
+### BE-12: User record creation on first login
+
+**Size:** S
+
+**Description:**
+On each authenticated request, look up the User row by Clerk ID. If none exists, create one using the username and other claims from the JWT. This is transparent to the caller — the handler receives a fully populated `User` value.
+
+**Acceptance criteria:**
+- [ ] The first authenticated request from a new Clerk user creates a User row
+- [ ] Subsequent requests from the same Clerk user retrieve the existing row without creating a duplicate
+- [ ] `GET /api/me` returns the user's profile in the specified shape
+- [ ] `UniqueGithubId` (clerk ID mapped to this column) constraint prevents duplicate rows
+
+---
+
+### BE-13: Link submissions to users
+
+**Size:** S
+
+**Description:**
+Update the submission write path (BE-09) to populate `userId` with the authenticated user's database ID.
+
+**Acceptance criteria:**
+- [ ] Every submission row has a non-null `userId`
+- [ ] `GET /api/submissions?exercise_id=:id` returns only submissions belonging to the authenticated user
+- [ ] Submissions from one user are never visible to another user
+
+---
+
+### BE-14: Per-user rate limiting on submissions
+
+**Size:** S
+
+**Description:**
+Add a per-user rate limit to `POST /api/submissions` (10 requests per minute per user), supplementing the existing per-IP limit from BE-05. The stricter of the two limits applies.
+
+**Acceptance criteria:**
+- [ ] The 11th submission from the same user within 60 seconds returns 429, even if from different IPs
+- [ ] The per-user limit is configurable via `RATE_LIMIT_PER_USER` (default 10)
+- [ ] The `Retry-After` header reflects the per-user window, not the per-IP window
+- [ ] Per-IP limit from BE-05 is still enforced independently
+
+---
+
+## Phase 4: Progress and Curriculum API
+
+**Goal:** `UserProgress` is maintained transactionally. The progress endpoint works. Exercise list is fully ordered and chapter-grouped.
+
+---
+
+### BE-15: UserProgress upsert on submission
+
+**Size:** M
+
+**Description:**
+After persisting a submission, upsert the `UserProgress` row for the (user, exercise) pair within the same database transaction. Status advances monotonically: `NotStarted` → `Attempted` → `Passed`. A failing submission after a pass does not regress status.
+
+**Acceptance criteria:**
+- [ ] The first submission for a (user, exercise) pair creates a `UserProgress` row with status `Attempted` (or `Passed` if it passed)
+- [ ] A passing submission sets status to `Passed` and records `firstPassedAt` (only the first time)
+- [ ] A failing submission after a pass leaves status as `Passed`
+- [ ] `lastSubmittedAt` is updated on every submission
+- [ ] The submission insert and the progress upsert succeed or fail together (same transaction)
+
+---
+
+### BE-16: Progress endpoint
+
+**Size:** S
+
+**Description:**
+Implement `GET /api/progress`. Return a progress entry for every exercise, including those with no submissions (status `not_started`).
+
+**Acceptance criteria:**
+- [ ] All exercises are present in the response, not only those with submissions
+- [ ] Exercises with no `UserProgress` row appear with `status: "not_started"` and null timestamps
+- [ ] Response is ordered to match the exercise list order (chapter order, then order within chapter)
+- [ ] `firstPassedAt` and `lastSubmittedAt` are ISO 8601 strings or null
+
+---
+
+### BE-17: Fully ordered chapter-grouped exercise list
+
+**Size:** S
+
+**Description:**
+Verify and harden the `GET /api/exercises` response: chapters are ordered by `Chapter.orderNum`, exercises within each chapter are ordered by `Exercise.orderInChapter`. This replaces any ordering assumptions from BE-08.
+
+**Acceptance criteria:**
+- [ ] Chapters appear in ascending `orderNum` order
+- [ ] Exercises within each chapter appear in ascending `orderInChapter` order
+- [ ] The response is stable across repeated requests (no non-deterministic ordering)
+- [ ] An Esqueleto query (not in-memory sort) handles the ordering
+
+---
+
+### BE-18: Request logging middleware
+
+**Size:** S
+
+**Description:**
+Add structured request logging to all endpoints. Log method, path, status code, and latency for every request. Do not log request bodies (may contain user code) or auth tokens.
+
+**Acceptance criteria:**
+- [ ] Every request produces one log line on completion: method, path, status, latency in ms
+- [ ] Request and response bodies are not logged
+- [ ] Authorization headers are not logged
+- [ ] Log output goes to stdout in a format that is readable locally and parseable in production (structured JSON or logfmt)
+
+---
+
+## Execution Order
+
+Implement stories in this sequence; each phase should be independently testable before starting the next:
+
+1. BE-01 → BE-02 → BE-03 → BE-04 → BE-05 *(walking skeleton complete)*
+2. BE-06 → BE-07 → BE-08 → BE-09 → BE-10 *(data layer complete)*
+3. BE-11 → BE-12 → BE-13 → BE-14 *(auth complete)*
+4. BE-15 → BE-16 → BE-17 → BE-18 *(progress and curriculum API complete)*
