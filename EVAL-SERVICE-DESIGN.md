@@ -150,16 +150,19 @@ Since we use managed Judge0 cloud, this section covers the per-submission parame
 
 ### Test suite injection
 
-Judge0 receives a single source file. The server combines user code and the hidden test suite before sending, using the following structure:
+Judge0 supports an `additional_files` parameter: a base64-encoded zip containing supplementary source files. We use this to send user code and the hidden test suite as separate, valid Haskell modules — avoiding the need to concatenate two module declarations into one file, which GHC does not allow.
 
-1. The user's submitted code uses an exercise-specific module name matching the exercise `id` in PascalCase (e.g., exercise `hello-world` → `module HelloWorld where`; `list-comprehensions` → `module ListComprehensions where`). The stub code includes this declaration; users do not change it.
-2. The hidden test suite imports that specific module by name.
-3. The API server concatenates them into a single source file server-side, with a `main` that runs the HSpec suite.
-4. The canonical solution is **never** sent to Judge0.
+Submission structure sent to Judge0:
 
-This convention is consistent with Exercism's Haskell track and teaches idiomatic module naming. The slug-to-PascalCase conversion is deterministic and applied uniformly across all exercises.
+1. **`source_code`**: the hidden test suite (a complete Haskell module, e.g. `module HelloWorldSpec where`, with its own `import HelloWorld` and a `main` that runs the HSpec suite). This file provides the `main` entry point.
+2. **`additional_files`**: a base64-encoded zip containing one file — the user's submitted code as `HelloWorld.hs` (filename derived from the exercise slug via PascalCase conversion). GHC compiles both files together.
+3. The **canonical solution** is never sent to Judge0.
 
-This concatenation happens entirely in the API server's memory and is never logged or returned to the client.
+The filename in the zip must match the module name: `module HelloWorld where` → `HelloWorld.hs`. The slug-to-PascalCase conversion is deterministic and applied uniformly.
+
+**Verification required at BE-03:** Confirm that the Judge0 managed cloud tier supports `additional_files`. This is documented for the self-hosted version; check the cloud API before committing to this approach. Fallback: restructure `hidden_test_suite` to store only the HSpec spec body (no module declaration), and assemble a valid single-module file server-side by parsing and reordering user imports.
+
+All assembly happens in the API server's memory and is never logged or returned to the client.
 
 ### Response mapping
 

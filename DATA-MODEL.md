@@ -64,13 +64,13 @@ Exercise slugs map to Haskell module names via PascalCase conversion (`hello-wor
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
 
 User
-  githubId    Int64
+  clerkId     Text
   username    Text
   email       Text Maybe
   avatarUrl   Text Maybe
   createdAt   UTCTime
   updatedAt   UTCTime
-  UniqueGithubId githubId
+  UniqueClerkId clerkId
   deriving Show Eq
 
 Chapter
@@ -167,13 +167,13 @@ This is the SQL that `runMigration migrateAll` generates. Commit this for review
 ```sql
 CREATE TABLE "user" (
   "id"          BIGSERIAL PRIMARY KEY,
-  "github_id"   BIGINT    NOT NULL,
+  "clerk_id"    TEXT      NOT NULL,
   "username"    TEXT      NOT NULL,
   "email"       TEXT,
   "avatar_url"  TEXT,
   "created_at"  TIMESTAMPTZ NOT NULL,
   "updated_at"  TIMESTAMPTZ NOT NULL,
-  CONSTRAINT "unique_github_id" UNIQUE ("github_id")
+  CONSTRAINT "unique_clerk_id" UNIQUE ("clerk_id")
 );
 
 CREATE TABLE "chapter" (
