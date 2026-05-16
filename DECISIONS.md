@@ -37,8 +37,14 @@ Hints are always read/written as a complete ordered array, never queried element
 **UserProgress status: monotonically advancing**
 A failing submission after a passing one does not regress status from `Passed` to `Attempted`. Once you've passed an exercise, it stays passed. Product decision: appropriate for a learning tool where the goal is eventual mastery. See DATA-MODEL.md.
 
-**Judge0 injection: `additional_files` (two-file submission)**
-User code and hidden test suite are both complete Haskell modules with their own `module` declarations. GHC cannot compile two module declarations concatenated into one file. Judge0's `additional_files` (base64 zip) allows sending both files separately. **Requires verification against the Judge0 managed cloud tier at BE-03 time** — the fallback is server-side assembly of a single valid module. See EVAL-SERVICE-DESIGN.md.
+**Judge0 injection: `additional_files` (two-file submission) — VERIFIED**
+`additional_files` is supported on the managed cloud tier. Spike confirmed: user code goes in the zip as `HelloWorld.hs` (or equivalent); test module is `source_code`. All submissions must use `base64_encoded=true` to handle special characters safely. See EVAL-SERVICE-DESIGN.md.
+
+**Judge0 environment: language ID 61, GHC 8.8.1, base-only packages**
+Spike confirmed language ID is 61 (not 12 as estimated). GHC version is 8.8.1 — older than local dev (9.6.x) but adequate for all planned exercises. HSpec is not installed; only `base` packages are available. Resource limit caps: `cpu_time_limit` ≤ 20s, `wall_time_limit` ≤ 30s (lower than originally planned).
+
+**Test runner: custom base-only framework (no HSpec)**
+HSpec is unavailable in Judge0's environment. Replaced with a minimal `assertEqual`-style runner using only `System.Exit` from `base`. Output format: `N examples, M failures` (same summary line as HSpec for consistent parsing). Fail path returns `NZEC` exit status (Runtime Error in Judge0 terms), which maps to our `fail` status. All 30 `hidden_test_suite` entries in CURRICULUM.json rewritten accordingly. See EVAL-SERVICE-DESIGN.md.
 
 **User identifier: `clerkId Text`**
 Clerk user IDs are strings (`user_2Nxxx`), not integers. Using the Clerk user ID directly is simpler than querying the underlying GitHub user ID from social connection data, and is provider-neutral for future OAuth additions. Fixed from original `githubId Int64`. See DATA-MODEL.md.

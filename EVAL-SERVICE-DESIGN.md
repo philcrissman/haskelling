@@ -147,48 +147,82 @@ The host header is required by RapidAPI even though it's redundant with the URL.
 
 ### Language
 
-- **Language ID:** 12 (Haskell / GHC) — confirm against current Judge0 language list at integration time, as IDs can change between versions.
+- **Language ID:** 61 (Haskell / GHC 8.8.1) — verified in Phase 2 spike. GHC 8.8.1 is older than local dev (9.6.x) but covers all planned exercises.
 
 ### Resource limits per submission
 
+The managed cloud tier enforces a lower ceiling than the self-hosted defaults:
+
 | Parameter | Value | Rationale |
 |-----------|-------|-----------|
-| `cpu_time_limit` | 30s | GHC compilation of a small file typically takes 5–15s cold |
-| `wall_time_limit` | 60s | Full wall-clock ceiling including compile + run |
+| `cpu_time_limit` | 20s | Cloud tier maximum (originally planned 30s) |
+| `wall_time_limit` | 30s | Cloud tier maximum (originally planned 60s) |
 | `memory_limit` | 524288 KB (512MB) | GHC needs ~256MB minimum; 512MB gives headroom |
 | `max_file_size` | 1024 KB | Prevent output flooding |
 | `number_of_runs` | 1 | Single evaluation per submission |
 
-### Test suite injection
+### Test suite injection — VERIFIED
 
-Judge0 supports an `additional_files` parameter: a base64-encoded zip containing supplementary source files. We use this to send user code and the hidden test suite as separate, valid Haskell modules — avoiding the need to concatenate two module declarations into one file, which GHC does not allow.
+`additional_files` is supported on the managed cloud tier (confirmed in Phase 2 spike).
+
+All submissions must use the `base64_encoded=true` query parameter. With it, `source_code`, `compile_output`, and `stdout` in responses are also base64-encoded — decode before use.
 
 Submission structure sent to Judge0:
 
-1. **`source_code`**: the hidden test suite (a complete Haskell module, e.g. `module HelloWorldSpec where`, with its own `import HelloWorld` and a `main` that runs the HSpec suite). This file provides the `main` entry point.
-2. **`additional_files`**: a base64-encoded zip containing one file — the user's submitted code as `HelloWorld.hs` (filename derived from the exercise slug via PascalCase conversion). GHC compiles both files together.
+1. **`source_code`** (base64): the hidden test runner (a complete Haskell module, e.g. `module Main where`, importing the user's module and running assertions). This file provides the `main` entry point.
+2. **`additional_files`** (base64 zip): one file — the user's submitted code as `HelloWorld.hs` (filename derived from the exercise slug via PascalCase conversion). GHC compiles both files together.
 3. The **canonical solution** is never sent to Judge0.
 
 The filename in the zip must match the module name: `module HelloWorld where` → `HelloWorld.hs`. The slug-to-PascalCase conversion is deterministic and applied uniformly.
 
-**Verification required at BE-03:** Confirm that the Judge0 managed cloud tier supports `additional_files`. This is documented for the self-hosted version; check the cloud API before committing to this approach. Fallback: restructure `hidden_test_suite` to store only the HSpec spec body (no module declaration), and assemble a valid single-module file server-side by parsing and reordering user imports.
-
 All assembly happens in the API server's memory and is never logged or returned to the client.
+
+### Test runner (base-only, no HSpec)
+
+HSpec is not available in Judge0's GHC 8.8.1 environment. All `hidden_test_suite` entries use a minimal custom framework built on `base` only:
+
+```haskell
+module Main where
+
+import System.Exit (exitFailure, exitSuccess)
+import <ExerciseModule>
+
+assertEqual :: (Show a, Eq a) => String -> a -> a -> IO Bool
+assertEqual name actual expected
+  | actual == expected = do
+      putStrLn $ "  PASS: " ++ name
+      return True
+  | otherwise = do
+      putStrLn $ "  FAIL: " ++ name
+      putStrLn $ "    expected: " ++ show expected
+      putStrLn $ "    got:      " ++ show actual
+      return False
+
+main :: IO ()
+main = do
+  results <- sequence [ ... ]
+  let passed = length (filter id results)
+      failed  = length results - passed
+  putStrLn $ show (length results) ++ " examples, " ++ show failed ++ " failures"
+  if failed == 0 then exitSuccess else exitFailure
+```
+
+The summary line `N examples, M failures` is identical to HSpec's format — the response parsing logic remains unchanged.
 
 ### Response mapping
 
 Judge0 returns a `status` object. Map to our status values:
 
-| Judge0 status | Our status |
-|---------------|------------|
-| Accepted | `pass` (if all tests pass) or `fail` (if any test fails) |
-| Wrong Answer | `fail` |
-| Compilation Error | `compile_error` |
-| Time Limit Exceeded | `timeout` |
-| Runtime Error | `runtime_error` |
-| Internal Error / others | `error` |
+| Judge0 status | Our status | Notes |
+|---------------|------------|-------|
+| Accepted | `pass` | All tests passed; `exitSuccess` returns status 3 |
+| Runtime Error (NZEC) | `fail` | Test runner called `exitFailure`; parse stdout for counts |
+| Compilation Error | `compile_error` | Return sanitized `compile_output` to client |
+| Time Limit Exceeded | `timeout` | — |
+| Runtime Error (other) | `runtime_error` | Distinguish from NZEC by checking stdout for summary line |
+| Internal Error / others | `error` | Log raw status ID; return generic message to client |
 
-Determining `pass` vs `fail` within an Accepted status: parse HSpec's stdout for the summary line (e.g., `3 examples, 0 failures`). If failures == 0, status is `pass`.
+Determining `pass` vs `fail`: when Judge0 status is Accepted, status is `pass`. When status is Runtime Error, check stdout for the `N examples, M failures` summary line — if present and failures > 0, status is `fail`; if stdout lacks the summary line, status is `runtime_error`. This avoids misclassifying a genuine crash as a test failure.
 
 ---
 
