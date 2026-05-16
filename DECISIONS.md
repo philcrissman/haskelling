@@ -22,8 +22,8 @@ Minimise ops burden for solo maintainer. git-push deploys and managed TLS prefer
 **Database: PostgreSQL + Persistent + Esqueleto**
 Most documented Haskell web stack combination. Supabase/Neon free tier during development. See ADR-001.
 
-**Frontend: TypeScript SPA with Vite**
-Keeps frontend in familiar territory; concentrates Haskell learning on the backend. React recommended (best Clerk/CodeMirror integration examples) but not yet confirmed — decide before FE-01. See FRONTEND-STORIES.md.
+**Frontend: TypeScript SPA with Vite + Svelte**
+Keeps frontend in familiar territory; concentrates Haskell learning on the backend. Svelte chosen over React for its simpler component model — less boilerplate, lower cognitive load alongside learning Haskell. LLM assistance will compensate for thinner example coverage vs React. See FRONTEND-STORIES.md.
 
 **Code editor: CodeMirror 6**
 ~250KB, modular, mobile-friendly, adequate Haskell syntax support. Monaco too heavy for small exercise snippets. See ADR-001.

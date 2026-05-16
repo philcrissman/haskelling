@@ -218,5 +218,5 @@ These must be resolved before the indicated phase:
 
 | Decision | Resolve before | Note |
 |----------|---------------|------|
-| Frontend framework (React vs Svelte) | Phase 5 (FE-01) | React recommended; confirm or redirect |
+| ~~Frontend framework~~ | ~~Phase 5 (FE-01)~~ | **Resolved: Svelte** |
 | Judge0 `additional_files` support in cloud tier | Phase 2 | Determines injection approach for BE-03 |

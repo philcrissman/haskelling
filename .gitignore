@@ -21,3 +21,25 @@ cabal.project.local
 cabal.project.local~
 .HTF/
 .ghc.environment.*
+
+# Environment secrets — never commit these
+.env.local
+.env.*.local
+backend/.env.local
+frontend/.env.local
+*.secret
+
+# Node / frontend
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/.svelte-kit/
+frontend/build/
+
+# macOS
+.DS_Store
+
+# Editor
+.idea/
+*.swp
+*.swo

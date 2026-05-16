@@ -6,7 +6,7 @@
 
 ## Framework Note
 
-The ADR specifies a TypeScript SPA built with Vite. These stories are written for **React + TypeScript**, which has the most complete integration examples for Clerk and CodeMirror 6. If you prefer Svelte, the acceptance criteria are identical — only the implementation differs. Confirm the framework choice before starting FE-01.
+The ADR specifies a TypeScript SPA built with Vite + **Svelte**. Svelte was chosen over React for its simpler component model — less boilerplate, lower cognitive load alongside learning Haskell. The acceptance criteria below are framework-agnostic; implementation uses Svelte idioms.
 
 ---
 
