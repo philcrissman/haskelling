@@ -132,7 +132,18 @@ ExerciseClient {
 
 ## 3. Judge0 Configuration
 
-Since we use managed Judge0 cloud, this section covers the per-submission parameters we set when calling the Judge0 API, rather than a Dockerfile.
+Since we use managed Judge0 cloud via RapidAPI, this section covers the per-submission parameters we set when calling the Judge0 API, rather than a Dockerfile.
+
+### RapidAPI headers
+
+Every request to Judge0 must include two headers:
+
+```
+x-rapidapi-key: <JUDGE0_API_KEY from env>
+x-rapidapi-host: judge0-ce.p.rapidapi.com
+```
+
+The host header is required by RapidAPI even though it's redundant with the URL. Both are sent from the backend only; never exposed to the client.
 
 ### Language
 

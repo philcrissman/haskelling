@@ -11,7 +11,7 @@ This is the primary input to periodic reviews. See INITIAL_PLANNING.md for the r
 Learning Haskell idioms is the primary goal; Servant's type-level routing teaches this better than Scotty. Also the most production-common choice for long-term project health. See ADR-001.
 
 **Sandbox: Managed Judge0 cloud, pay-per-use to start**
-Judge0 offers pay-per-use at $0.0013/submission and volume pricing at $33.75/month for 2000 submissions/day. Starting with pay-per-use — development costs will be near zero with JUDGE0_MOCK=true as default. Switch to volume pricing when usage reaches ~865 submissions/day (the breakeven point). Self-hosting considered but ops burden + hosting cost (~$10–20/month for a VPS with enough RAM for GHC) not worth it for a solo maintainer. See ADR-001.
+Judge0 signup redirects to RapidAPI (their billing layer). Actual pay-per-use price via RapidAPI: $0.0017/submission (Judge0's own site lists $0.0013 — use $0.0017 for cost estimates). Volume pricing on RapidAPI: $44.99/month intro tier; break-even ~882 submissions/day (~26,465/month) at $0.0017/submission. Starting with pay-per-use — development costs near zero with JUDGE0_MOCK=true as default. Self-hosting considered but ops burden + hosting cost (~$10–20/month for a VPS with enough RAM for GHC) not worth it for a solo maintainer. See ADR-001.
 
 **Auth: GitHub OAuth via Clerk (free tier)**
 Developer audience universally has GitHub. Clerk avoids building password flows, reset emails, and credential storage. Email/password and GitLab OAuth deferred to post-MVP. See ADR-001.
