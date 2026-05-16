@@ -10,7 +10,7 @@ A Rustlings/koans-style web app for learning Haskell. Complete exercises in your
 
 | Tool | Version | Install |
 |------|---------|---------|
-| GHC | 9.6.x | [ghcup](https://www.haskell.org/ghcup/) |
+| GHC | 9.4.x | [ghcup](https://www.haskell.org/ghcup/) |
 | cabal | 3.10+ | included with ghcup |
 | Node | 20 LTS | [nvm](https://github.com/nvm-sh/nvm) or [nodejs.org](https://nodejs.org) |
 | Docker | any recent | [OrbStack](https://orbstack.dev) (macOS) or [Docker Desktop](https://www.docker.com/products/docker-desktop/) |
@@ -19,8 +19,8 @@ Install GHC and cabal via ghcup:
 
 ```bash
 curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
-ghcup install ghc 9.6
-ghcup set ghc 9.6
+ghcup install ghc 9.4
+ghcup set ghc 9.4
 ```
 
 ---
