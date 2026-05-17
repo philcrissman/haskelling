@@ -1,13 +1,50 @@
 {-# LANGUAGE DataKinds #-}
 
-module Server where
+module Server
+  ( app
+  , newRateLimiter
+  , RateLimiter
+  ) where
 
 import API
+import Control.Concurrent.STM
 import Control.Monad.IO.Class (liftIO)
 import Data.Aeson (encode, object, (.=))
+import Data.Map.Strict (Map)
+import Data.Map.Strict qualified as Map
 import Data.Text (Text)
+import Data.Text qualified as T
+import Data.Time (UTCTime, diffUTCTime, getCurrentTime)
 import Judge0 (Judge0Config (..), SubmissionResult (..), submitAndWait)
+import Network.HTTP.Types.Status (status429)
+import Network.Socket (SockAddr (..), hostAddressToTuple)
+import Network.Wai (pathInfo, remoteHost, requestMethod, responseLBS)
 import Servant
+
+-- Rate limiter: per-IP sliding window (count, window-start)
+
+type RateLimiter = TVar (Map Text (Int, UTCTime))
+
+newRateLimiter :: IO RateLimiter
+newRateLimiter = newTVarIO Map.empty
+
+-- Returns True if the request is allowed, increments counter if so.
+checkAndIncrement :: RateLimiter -> Int -> Text -> UTCTime -> STM Bool
+checkAndIncrement limiter maxPerMin ip now = do
+  m <- readTVar limiter
+  let (count, windowStart) = maybe (0, now) id (Map.lookup ip m)
+      elapsed              = diffUTCTime now windowStart
+  if elapsed >= 60
+    then writeTVar limiter (Map.insert ip (1, now) m)      >> pure True
+    else if count >= maxPerMin
+           then pure False
+           else writeTVar limiter (Map.insert ip (count + 1, windowStart) m) >> pure True
+
+sockAddrIp :: SockAddr -> Text
+sockAddrIp (SockAddrInet _ addr) =
+  let (a, b, c, d) = hostAddressToTuple addr
+  in T.intercalate "." (map (T.pack . show) [a, b, c, d])
+sockAddrIp sa = T.pack (show sa)
 
 -- Hardcoded hello-world exercise (replaced by DB in BE-08)
 
@@ -41,7 +78,7 @@ jsonError :: ServerError -> Text -> Text -> Handler a
 jsonError base msg code =
   throwError
     base
-      { errBody = encode (object ["error" .= msg, "code" .= code])
+      { errBody    = encode (object ["error" .= msg, "code" .= code])
       , errHeaders = [("Content-Type", "application/json")]
       }
 
@@ -85,11 +122,9 @@ submitHandler :: Judge0Config -> SubmitRequest -> Handler SubmitResponse
 submitHandler cfg req = do
   let eid  = submitExerciseId req
       code = submitCode req
-  -- Code size guard (50 KB)
   if fromIntegral (length (show code)) > (50_000 :: Int)
     then jsonError err413 "code exceeds 50KB limit" "too_large"
     else do
-      -- Hardcoded test lookup (replaced by DB in BE-08)
       hiddenTests <- case eid of
         "hello-world" -> pure helloWorldTests
         _             -> jsonError err404 "exercise not found" "not_found"
@@ -109,5 +144,21 @@ server cfg =
     :<|> (exercisesListHandler :<|> exerciseByIdHandler)
     :<|> submitHandler cfg
 
-app :: Judge0Config -> Application
-app cfg = serve (Proxy :: Proxy API) (server cfg)
+app :: Judge0Config -> RateLimiter -> Int -> Application
+app cfg limiter rateLimit =
+  rateLimitMiddleware limiter rateLimit $
+  serve (Proxy :: Proxy API) (server cfg)
+
+rateLimitMiddleware :: RateLimiter -> Int -> Application -> Application
+rateLimitMiddleware limiter maxPerMin inner req send =
+  if requestMethod req == "POST" && pathInfo req == ["api", "submissions"]
+    then do
+      now <- getCurrentTime
+      let ip = sockAddrIp (remoteHost req)
+      allowed <- atomically $ checkAndIncrement limiter maxPerMin ip now
+      if allowed
+        then inner req send
+        else send $ responseLBS status429
+               [("Content-Type", "application/json")]
+               (encode (object ["error" .= ("rate limit exceeded" :: Text), "code" .= ("rate_limited" :: Text)]))
+    else inner req send

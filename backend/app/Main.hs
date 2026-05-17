@@ -10,7 +10,7 @@ import Judge0 (Judge0Config (..))
 import Network.Wai.Handler.Warp (run)
 import Schema (migrateAll)
 import Seed (seedFromFile)
-import Server (app)
+import Server (app, newRateLimiter)
 import System.Environment (lookupEnv)
 import System.Exit (die)
 import Text.Read (readMaybe)
@@ -63,6 +63,14 @@ main = do
       , judge0Mock    = isMock
       }
 
+  -- Rate limiting
+  rateLimitPerIp <- do
+    s <- lookupEnv "RATE_LIMIT_PER_IP"
+    pure $ case s >>= readMaybe of
+      Just n  -> n
+      Nothing -> 20
+  limiter <- newRateLimiter
+
   -- Serve
   putStrLn $ "haskelling: listening on port " <> show port
-  run port (app judge0Cfg)
+  run port (app judge0Cfg limiter rateLimitPerIp)

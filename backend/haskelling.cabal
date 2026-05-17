@@ -29,6 +29,8 @@ library
     http-client-tls       >= 0.3,
     http-types            >= 0.12,
     monad-logger          >= 0.3,
+    network               >= 3.1,
+    stm                   >= 2.5,
     persistent            >= 2.14,
     persistent-postgresql >= 2.13,
     servant               >= 0.20,
