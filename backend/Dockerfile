@@ -9,6 +9,7 @@ WORKDIR /app
 # System libs required to compile Haskell deps (libpq-dev, zlib)
 RUN apt-get update && apt-get install -y --no-install-recommends \
       libpq-dev \
+      pkg-config \
       zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
