@@ -1,0 +1,5 @@
+backend/dist-newstyle/
+backend/.env.local
+backend/.env
+.git/
+frontend/node_modules/
