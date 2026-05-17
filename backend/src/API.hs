@@ -3,8 +3,9 @@
 
 module API where
 
-import Data.Aeson (ToJSON (..), object, (.=))
+import Data.Aeson (FromJSON (..), ToJSON (..), object, withObject, (.:), (.=))
 import Data.Text (Text)
+import Schema (SubmissionStatus (..))
 import Servant
 
 -- Health
@@ -57,6 +58,40 @@ newtype ExercisesListResponse = ExercisesListResponse
 instance ToJSON ExercisesListResponse where
   toJSON r = object ["chapters" .= responseChapters r]
 
+-- Submissions
+
+data SubmitRequest = SubmitRequest
+  { submitExerciseId :: Text
+  , submitCode       :: Text
+  }
+
+instance FromJSON SubmitRequest where
+  parseJSON = withObject "SubmitRequest" $ \o ->
+    SubmitRequest <$> o .: "exercise_id" <*> o .: "code"
+
+data SubmitResponse = SubmitResponse
+  { submitStatus      :: Text
+  , submitOutput      :: Text
+  , submitPassedCount :: Int
+  , submitFailedCount :: Int
+  }
+
+instance ToJSON SubmitResponse where
+  toJSON r = object
+    [ "status"       .= submitStatus r
+    , "output"       .= submitOutput r
+    , "passed_count" .= submitPassedCount r
+    , "failed_count" .= submitFailedCount r
+    ]
+
+statusToText :: SubmissionStatus -> Text
+statusToText StatusPass         = "pass"
+statusToText StatusFail         = "fail"
+statusToText StatusCompileError = "compile_error"
+statusToText StatusTimeout      = "timeout"
+statusToText StatusRuntimeError = "runtime_error"
+statusToText StatusError        = "error"
+
 -- API type
 
 type HealthAPI = "health" :> Get '[JSON] HealthResponse
@@ -65,4 +100,7 @@ type ExercisesAPI =
        "api" :> "exercises" :> Get '[JSON] ExercisesListResponse
   :<|> "api" :> "exercises" :> Capture "id" Text :> Get '[JSON] ExerciseClient
 
-type API = HealthAPI :<|> ExercisesAPI
+type SubmissionsAPI =
+  "api" :> "submissions" :> ReqBody '[JSON] SubmitRequest :> Post '[JSON] SubmitResponse
+
+type API = HealthAPI :<|> ExercisesAPI :<|> SubmissionsAPI

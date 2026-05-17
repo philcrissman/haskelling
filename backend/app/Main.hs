@@ -1,9 +1,12 @@
 module Main where
 
+import Control.Monad (when)
 import Data.ByteString.Char8 qualified as BC8
+import Data.Text qualified as T
 import Database (makePool)
 import Database.Persist.Postgresql (runSqlPool)
 import Database.Persist.Sql (runMigration)
+import Judge0 (Judge0Config (..))
 import Network.Wai.Handler.Warp (run)
 import Schema (migrateAll)
 import Seed (seedFromFile)
@@ -39,6 +42,27 @@ main = do
     Nothing -> pure "../CURRICULUM.json"
   seedFromFile curriculumPath pool
 
+  -- Judge0
+  judge0Cfg <- do
+    apiUrl  <- lookupEnv "JUDGE0_API_URL"  >>= \case
+      Just u  -> pure (T.pack u)
+      Nothing -> pure "https://judge0-ce.p.rapidapi.com"
+    apiKey  <- lookupEnv "JUDGE0_API_KEY"  >>= \case
+      Just k  -> pure (T.pack k)
+      Nothing -> pure ""
+    apiHost <- lookupEnv "JUDGE0_API_HOST" >>= \case
+      Just h  -> pure (T.pack h)
+      Nothing -> pure "judge0-ce.p.rapidapi.com"
+    mockStr <- lookupEnv "JUDGE0_MOCK"
+    let isMock = mockStr == Just "true"
+    when isMock $ putStrLn "haskelling: Judge0 mock mode enabled"
+    pure Judge0Config
+      { judge0ApiUrl  = apiUrl
+      , judge0ApiKey  = apiKey
+      , judge0ApiHost = apiHost
+      , judge0Mock    = isMock
+      }
+
   -- Serve
   putStrLn $ "haskelling: listening on port " <> show port
-  run port app
+  run port (app judge0Cfg)
