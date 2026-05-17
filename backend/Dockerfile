@@ -2,7 +2,7 @@
 #   docker build -f backend/Dockerfile -t haskelling .
 
 # ── Stage 1: build ────────────────────────────────────────────────────────────
-FROM haskell:9.8.4 AS builder
+FROM haskell:9.12 AS builder
 
 WORKDIR /app
 
@@ -27,11 +27,11 @@ RUN cabal build exe:haskelling \
        /out/haskelling
 
 # ── Stage 2: runtime ──────────────────────────────────────────────────────────
-FROM debian:bullseye-slim
+FROM debian:bookworm-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
       ca-certificates \
-      libffi7 \
+      libffi8 \
       libgmp10 \
       libpq5 \
       zlib1g \
