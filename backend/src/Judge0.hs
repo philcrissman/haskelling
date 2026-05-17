@@ -4,10 +4,12 @@ module Judge0
   , submitAndWait
   ) where
 
+import Codec.Archive.Zip (addEntryToArchive, emptyArchive, fromArchive, toEntry)
 import Control.Concurrent (threadDelay)
 import Data.Aeson (FromJSON (..), eitherDecode, encode, object, withObject, (.:), (.:?), (.=))
 import Data.Aeson.Types (parseMaybe)
 import Data.ByteString.Base64 qualified as B64
+import Data.ByteString.Lazy qualified as BSL
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
@@ -141,9 +143,19 @@ sanitizeCompileOutput (Just t) =
 
 -- HTTP submission
 
--- Encode source text as UTF-8 then base64
+-- Encode text as UTF-8 then base64 (for source_code / stdin fields)
 encodeSource :: Text -> Text
 encodeSource = TE.decodeUtf8 . B64.encode . TE.encodeUtf8
+
+-- Build a base64-encoded zip containing the user's solution as <ModuleName>.hs.
+-- Judge0 extracts this alongside the test runner so the import resolves.
+makeAdditionalFiles :: Text -> Text -> Text
+makeAdditionalFiles exerciseSlug userCode =
+  let moduleName = T.concat . map T.toTitle . T.splitOn "-" $ exerciseSlug
+      fileName   = T.unpack moduleName <> ".hs"
+      entry      = toEntry fileName 0 (BSL.fromStrict (TE.encodeUtf8 userCode))
+      archive    = addEntryToArchive entry emptyArchive
+  in TE.decodeUtf8 . B64.encode . BSL.toStrict . fromArchive $ archive
 
 submitAndWait :: Judge0Config -> Text -> Text -> Text -> IO SubmissionResult
 submitAndWait cfg exerciseSlug userCode hiddenTests
@@ -153,13 +165,15 @@ submitAndWait cfg exerciseSlug userCode hiddenTests
       token <- submitBatch cfg mgr exerciseSlug userCode hiddenTests
       pollResult cfg mgr token
 
--- Build the submission payload and POST to /submissions
+-- source_code = the test runner (module Main); additional_files = zip of the
+-- user's solution so the import in the test runner resolves.
 submitBatch :: Judge0Config -> Manager -> Text -> Text -> Text -> IO Text
-submitBatch cfg mgr _exerciseSlug userCode hiddenTests = do
-  let combinedSrc = userCode <> "\n" <> hiddenTests
-      payload     = encode $ object
+submitBatch cfg mgr exerciseSlug userCode hiddenTests = do
+  let additionalFiles = makeAdditionalFiles exerciseSlug userCode
+      payload         = encode $ object
         [ "language_id"        .= (61 :: Int)  -- GHC 8.8.1
-        , "source_code"        .= encodeSource combinedSrc
+        , "source_code"        .= encodeSource hiddenTests
+        , "additional_files"   .= additionalFiles
         , "stdin"              .= encodeSource ""
         , "cpu_time_limit"     .= (20 :: Int)
         , "wall_time_limit"    .= (30 :: Int)
