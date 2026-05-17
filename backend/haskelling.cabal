@@ -6,21 +6,30 @@ build-type:    Simple
 common shared
   default-language:   GHC2021
   ghc-options:        -Wall
-  default-extensions: OverloadedStrings
+  default-extensions: LambdaCase OverloadedStrings
 
 library
   import:          shared
   hs-source-dirs:  src
   exposed-modules:
     API
+    Database
+    Schema
+    Seed
     Server
   build-depends:
-    base           >= 4.17 && < 5,
-    aeson          >= 2.0,
-    servant        >= 0.20,
-    servant-server >= 0.20,
-    text           >= 2.0,
-    wai            >= 3.2
+    base                >= 4.17 && < 5,
+    aeson               >= 2.0,
+    bytestring          >= 0.11,
+    containers          >= 0.6,
+    monad-logger        >= 0.3,
+    persistent          >= 2.14,
+    persistent-postgresql >= 2.13,
+    servant             >= 0.20,
+    servant-server      >= 0.20,
+    text                >= 2.0,
+    time                >= 1.9,
+    wai                 >= 3.2
 
 executable haskelling
   import:        shared
@@ -28,6 +37,10 @@ executable haskelling
   hs-source-dirs: app
   ghc-options:   -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-    base         >= 4.17 && < 5,
+    base                    >= 4.17 && < 5,
+    bytestring              >= 0.11,
     haskelling,
-    warp         >= 3.3
+    persistent              >= 2.14,
+    persistent-postgresql   >= 2.13,
+    text                    >= 2.0,
+    warp                    >= 3.3
