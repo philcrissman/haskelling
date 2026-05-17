@@ -13,10 +13,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Dependency layer — this expensive step is cached as long as haskelling.cabal
-# doesn't change.
+# Dependency layer — cached as long as haskelling.cabal doesn't change.
+# cabal 3.14 builds the local library as part of dep resolution, so we
+# create placeholder source files. The local build will fail (TH, missing
+# imports) but all external packages make it into the cabal store first.
 COPY backend/haskelling.cabal ./
-RUN cabal update && cabal build --only-dependencies exe:haskelling
+RUN mkdir -p src app \
+ && for m in API Database Judge0 Schema Seed Server; do \
+      printf "module %s where\n" "$m" > "src/${m}.hs"; \
+    done \
+ && printf "module Main where\nmain :: IO ()\nmain = return ()\n" > app/Main.hs \
+ && cabal update \
+ && cabal build exe:haskelling 2>&1 || true
 
 # Build the application
 COPY backend/ ./
