@@ -48,3 +48,16 @@ HSpec is unavailable in Judge0's environment. Replaced with a minimal `assertEqu
 
 **User identifier: `clerkId Text`**
 Clerk user IDs are strings (`user_2Nxxx`), not integers. Using the Clerk user ID directly is simpler than querying the underlying GitHub user ID from social connection data, and is provider-neutral for future OAuth additions. Fixed from original `githubId Int64`. See DATA-MODEL.md.
+
+---
+
+## 2026-05-17
+
+**Docker builder image: `haskell:9.12` (Debian bookworm)**
+`haskell:9.4.8` is based on Debian buster (EOL June 2022) — apt returns 404. `haskell:9.8.4` is bullseye, which ships libpq 13; `postgresql-libpq-configure 0.11` requires libpq ≥ 14.12 and fails. `haskell:9.12` is bookworm with libpq 15 and satisfies all requirements. GHC version in Docker (9.12.4) differs from local dev (9.4.8) but our `base >= 4.17 && < 5` bound covers both.
+
+**Docker runtime image: `debian:bookworm-slim`**
+Matches the builder's Debian version (bookworm), ensuring `libffi.so.8` and `libpq.so.5` are present. Runtime deps: `libffi8`, `libgmp10`, `libpq5`, `zlib1g`, `ca-certificates`. Final image size: 223MB. Runs as non-root uid 1001.
+
+**Docker dep-caching workaround for cabal 3.14**
+cabal 3.14 (shipped with `haskell:9.12`) builds the local library as part of dependency resolution, unlike older cabal where `--only-dependencies` skipped local packages. Workaround: copy `.cabal` file, create minimal placeholder source files for all modules, attempt `cabal build exe:haskelling || true` (external packages land in `~/.cabal/store` even when local lib fails), then `COPY` real source and build properly. This preserves the dependency caching layer — external packages are only recompiled when `haskelling.cabal` changes.
