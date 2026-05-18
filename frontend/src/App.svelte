@@ -1,9 +1,12 @@
 <script lang="ts">
+  import CodeEditor from './lib/CodeEditor.svelte';
+
+  let code = $state('module HelloWorld where\n\ngreet :: String\ngreet = undefined\n');
 </script>
 
 <main>
   <h1>haskelling</h1>
-  <p>Coming soon.</p>
+  <CodeEditor value={code} onChange={(v) => { code = v; }} />
 </main>
 
 <style>
