@@ -67,9 +67,10 @@ helloWorldExercise =
 basicsChapter :: ChapterResponse
 basicsChapter =
   ChapterResponse
-    { chapterSlug = "basics"
-    , chapterTitle = "Basics"
-    , chapterExercises = [helloWorldExercise]
+    { chapterSlug        = "basics"
+    , chapterTitle       = "Basics"
+    , chapterDescription = "Core Haskell syntax and fundamental concepts."
+    , chapterExercises   = [helloWorldExercise]
     }
 
 -- Error helper
@@ -159,6 +160,8 @@ rateLimitMiddleware limiter maxPerMin inner req send =
       if allowed
         then inner req send
         else send $ responseLBS status429
-               [("Content-Type", "application/json")]
+               [ ("Content-Type", "application/json")
+               , ("Retry-After",  "60")
+               ]
                (encode (object ["error" .= ("rate limit exceeded" :: Text), "code" .= ("rate_limited" :: Text)]))
     else inner req send

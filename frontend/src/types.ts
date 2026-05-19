@@ -21,6 +21,7 @@ export interface Exercise {
 export interface Chapter {
   slug: string;
   title: string;
+  description: string;
   exercises: Exercise[];
 }
 

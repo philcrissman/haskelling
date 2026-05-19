@@ -39,16 +39,18 @@ instance ToJSON ExerciseClient where
     ]
 
 data ChapterResponse = ChapterResponse
-  { chapterSlug      :: Text
-  , chapterTitle     :: Text
-  , chapterExercises :: [ExerciseClient]
+  { chapterSlug        :: Text
+  , chapterTitle       :: Text
+  , chapterDescription :: Text
+  , chapterExercises   :: [ExerciseClient]
   }
 
 instance ToJSON ChapterResponse where
   toJSON c = object
-    [ "slug"      .= chapterSlug c
-    , "title"     .= chapterTitle c
-    , "exercises" .= chapterExercises c
+    [ "slug"        .= chapterSlug c
+    , "title"       .= chapterTitle c
+    , "description" .= chapterDescription c
+    , "exercises"   .= chapterExercises c
     ]
 
 newtype ExercisesListResponse = ExercisesListResponse
