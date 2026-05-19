@@ -29,13 +29,13 @@ data ExerciseClient = ExerciseClient
 
 instance ToJSON ExerciseClient where
   toJSON e = object
-    [ "id"                 .= exerciseId e
-    , "title"              .= exerciseTitle e
-    , "chapter"            .= exerciseChapter e
-    , "order"              .= exerciseOrder e
-    , "learning_objective" .= exerciseLearningObj e
-    , "stub_code"          .= exerciseStubCode e
-    , "hints"              .= exerciseHints e
+    [ "id"               .= exerciseId e
+    , "title"            .= exerciseTitle e
+    , "chapter"          .= exerciseChapter e
+    , "order"            .= exerciseOrder e
+    , "learningObjective" .= exerciseLearningObj e
+    , "stubCode"         .= exerciseStubCode e
+    , "hints"            .= exerciseHints e
     ]
 
 data ChapterResponse = ChapterResponse
@@ -67,7 +67,7 @@ data SubmitRequest = SubmitRequest
 
 instance FromJSON SubmitRequest where
   parseJSON = withObject "SubmitRequest" $ \o ->
-    SubmitRequest <$> o .: "exercise_id" <*> o .: "code"
+    SubmitRequest <$> o .: "exerciseId" <*> o .: "code"
 
 data SubmitResponse = SubmitResponse
   { submitStatus      :: Text
@@ -80,8 +80,8 @@ instance ToJSON SubmitResponse where
   toJSON r = object
     [ "status"       .= submitStatus r
     , "output"       .= submitOutput r
-    , "passed_count" .= submitPassedCount r
-    , "failed_count" .= submitFailedCount r
+    , "passedCount"  .= submitPassedCount r
+    , "failedCount"  .= submitFailedCount r
     ]
 
 statusToText :: SubmissionStatus -> Text

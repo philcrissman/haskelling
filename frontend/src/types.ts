@@ -13,8 +13,8 @@ export interface Exercise {
   title: string;
   chapter: string;
   order: number;
-  learning_objective: string;
-  stub_code: string;
+  learningObjective: string;
+  stubCode: string;
   hints: string[];
 }
 
@@ -29,13 +29,13 @@ export interface ExercisesListResponse {
 }
 
 export interface SubmitRequest {
-  exercise_id: string;
+  exerciseId: string;
   code: string;
 }
 
 export interface SubmissionResult {
   status: SubmissionStatus;
   output: string;
-  passed_count: number;
-  failed_count: number;
+  passedCount: number;
+  failedCount: number;
 }
