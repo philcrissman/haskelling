@@ -1,17 +1,20 @@
 <script lang="ts">
-  import CodeEditor from './lib/CodeEditor.svelte';
+  import ExercisePage from './lib/ExercisePage.svelte';
+  import type { Exercise } from './types';
 
-  let code = $state('module HelloWorld where\n\ngreet :: String\ngreet = undefined\n');
+  const helloWorld: Exercise = {
+    id: 'hello-world',
+    title: 'Hello, World!',
+    chapter: 'basics',
+    order: 1,
+    learningObjective: 'Define a function that returns a fixed String value.',
+    stubCode: 'module HelloWorld where\n\ngreet :: String\ngreet = undefined',
+    hints: [
+      'A string literal in Haskell is written with double quotes.',
+      'Replace undefined with the string value the function should return.',
+      'Return the string "Hello, World!" exactly — note the comma and exclamation mark.',
+    ],
+  };
 </script>
 
-<main>
-  <h1>haskelling</h1>
-  <CodeEditor value={code} onChange={(v) => { code = v; }} />
-</main>
-
-<style>
-  main {
-    font-family: sans-serif;
-    padding: 2rem;
-  }
-</style>
+<ExercisePage exercise={helloWorld} />
