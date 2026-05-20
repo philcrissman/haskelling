@@ -16,8 +16,8 @@ Judge0 signup redirects to RapidAPI (their billing layer). Actual pay-per-use pr
 **Auth: GitHub OAuth via Clerk (free tier)**
 Developer audience universally has GitHub. Clerk avoids building password flows, reset emails, and credential storage. Email/password and GitLab OAuth deferred to post-MVP. See ADR-001.
 
-**Deployment: Fly.io or Railway (PaaS)**
-Minimise ops burden for solo maintainer. git-push deploys and managed TLS preferred over VPS. See ADR-001.
+**Deployment: Fly.io (PaaS)**
+Minimise ops burden for solo maintainer. Fly.io chosen over Railway: better cost predictability (small shared machine ~$2–5/month + Neon/Supabase free tier for Postgres vs Railway's ~$20–40/month). Docker-native workflow suits existing Dockerfile. git-push deploys and managed TLS preferred over VPS. See ADR-001.
 
 **Database: PostgreSQL + Persistent + Esqueleto**
 Most documented Haskell web stack combination. Supabase/Neon free tier during development. See ADR-001.
