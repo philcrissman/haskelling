@@ -1,0 +1,31 @@
+app = "haskelling-app"
+primary_region = "sjc"
+
+[build]
+  dockerfile = "backend/Dockerfile"
+  # Build context is the repo root so CURRICULUM.json is accessible.
+  # docker build -f backend/Dockerfile -t haskelling .
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [http_service.concurrency]
+    type = "requests"
+    hard_limit = 200
+    soft_limit = 100
+
+[[http_service.checks]]
+  grace_period = "10s"
+  interval = "30s"
+  method = "GET"
+  path = "/health"
+  timeout = "5s"
+
+[[vm]]
+  memory = "512mb"
+  cpu_kind = "shared"
+  cpus = 1
