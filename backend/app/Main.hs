@@ -38,9 +38,12 @@ main = do
 
   -- Seed
   curriculumPath <- lookupEnv "CURRICULUM_PATH" >>= \case
-    Just p -> pure p
+    Just p  -> pure p
     Nothing -> pure "../CURRICULUM.json"
-  seedFromFile curriculumPath pool
+  lessonsDir <- lookupEnv "LESSONS_DIR" >>= \case
+    Just p  -> pure p
+    Nothing -> pure "../curriculum/lessons"
+  seedFromFile curriculumPath lessonsDir pool
 
   -- Judge0
   judge0Cfg <- do
@@ -73,4 +76,4 @@ main = do
 
   -- Serve
   putStrLn $ "haskelling: listening on port " <> show port
-  run port (app judge0Cfg limiter rateLimitPerIp)
+  run port (app judge0Cfg limiter rateLimitPerIp pool)

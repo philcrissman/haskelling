@@ -76,6 +76,7 @@ Chapter
   slug        Text
   title       Text
   description Text
+  lesson      Text
   orderNum    Int
   UniqueChapterSlug slug
   deriving Show Eq
@@ -96,7 +97,7 @@ Exercise
   deriving Show Eq
 
 Submission
-  userId        UserId
+  userId        UserId Maybe    -- nullable until auth wired in (Phase 9 / BE-13)
   exerciseId    ExerciseId
   code          Text
   status        SubmissionStatus

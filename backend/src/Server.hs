@@ -10,15 +10,23 @@ import API
 import Control.Concurrent.STM
 import Control.Monad.IO.Class (liftIO)
 import Data.Aeson (encode, object, (.=))
+import Data.ByteString.Char8 qualified as BC8
+import Data.List (sortBy)
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
+import Data.Ord (comparing)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Time (UTCTime, diffUTCTime, getCurrentTime)
+import Database.Persist (Entity (..), SelectOpt (..), get, getBy, insert_, selectList, (==.))
+import Database.Persist.Postgresql (ConnectionPool, runSqlPool)
+import Database.Persist.Sql (fromSqlKey)
 import Judge0 (Judge0Config (..), SubmissionResult (..), submitAndWait)
-import Network.HTTP.Types.Status (status429)
+import Network.HTTP.Types (statusCode, status429)
 import Network.Socket (SockAddr (..), hostAddressToTuple)
-import Network.Wai (pathInfo, remoteHost, requestMethod, responseLBS)
+import Network.Wai (pathInfo, remoteHost, requestMethod, responseStatus, responseLBS)
+import qualified Schema
+import Schema (HintList (..))
 import Servant
 
 -- Rate limiter: per-IP sliding window (count, window-start)
@@ -28,7 +36,6 @@ type RateLimiter = TVar (Map Text (Int, UTCTime))
 newRateLimiter :: IO RateLimiter
 newRateLimiter = newTVarIO Map.empty
 
--- Returns True if the request is allowed, increments counter if so.
 checkAndIncrement :: RateLimiter -> Int -> Text -> UTCTime -> STM Bool
 checkAndIncrement limiter maxPerMin ip now = do
   m <- readTVar limiter
@@ -46,33 +53,6 @@ sockAddrIp (SockAddrInet _ addr) =
   in T.intercalate "." (map (T.pack . show) [a, b, c, d])
 sockAddrIp sa = T.pack (show sa)
 
--- Hardcoded hello-world exercise (replaced by DB in BE-08)
-
-helloWorldExercise :: ExerciseClient
-helloWorldExercise =
-  ExerciseClient
-    { exerciseId = "hello-world"
-    , exerciseTitle = "Hello, World!"
-    , exerciseChapter = "basics"
-    , exerciseOrder = 1
-    , exerciseLearningObj = "Define a function that returns a fixed String value."
-    , exerciseStubCode = "module HelloWorld where\n\ngreet :: String\ngreet = undefined"
-    , exerciseHints =
-        [ "A string literal in Haskell is written with double quotes."
-        , "Replace undefined with the string value the function should return."
-        , "Return the string \"Hello, World!\" exactly \8212 note the comma and exclamation mark."
-        ]
-    }
-
-basicsChapter :: ChapterResponse
-basicsChapter =
-  ChapterResponse
-    { chapterSlug        = "basics"
-    , chapterTitle       = "Basics"
-    , chapterDescription = "Core Haskell syntax and fundamental concepts."
-    , chapterExercises   = [helloWorldExercise]
-    }
-
 -- Error helper
 
 jsonError :: ServerError -> Text -> Text -> Handler a
@@ -83,53 +63,81 @@ jsonError base msg code =
       , errHeaders = [("Content-Type", "application/json")]
       }
 
+-- DB → API conversion helpers
+
+toExerciseClient :: Text -> Entity Schema.Exercise -> ExerciseClient
+toExerciseClient chapSlug (Entity _ ex) = ExerciseClient
+  { exerciseId          = Schema.exerciseSlug ex
+  , exerciseTitle       = Schema.exerciseTitle ex
+  , exerciseChapter     = chapSlug
+  , exerciseOrder       = Schema.exerciseOrderInChapter ex
+  , exerciseLearningObj = Schema.exerciseLearningObjective ex
+  , exerciseStubCode    = Schema.exerciseStubCode ex
+  , exerciseHints       = getHints (Schema.exerciseHints ex)
+  }
+
+toChapterResponse :: Entity Schema.Chapter -> [Entity Schema.Exercise] -> ChapterResponse
+toChapterResponse (Entity _ ch) exs = ChapterResponse
+  { chapterSlug        = Schema.chapterSlug ch
+  , chapterTitle       = Schema.chapterTitle ch
+  , chapterDescription = Schema.chapterDescription ch
+  , chapterLesson      = Schema.chapterLesson ch
+  , chapterExercises   = map (toExerciseClient (Schema.chapterSlug ch)) exs
+  }
+
 -- Handlers
 
 healthHandler :: Handler HealthResponse
-healthHandler = return $ HealthResponse {status = "ok"}
+healthHandler = return $ HealthResponse { status = "ok" }
 
-exercisesListHandler :: Handler ExercisesListResponse
-exercisesListHandler = return $ ExercisesListResponse {responseChapters = [basicsChapter]}
+exercisesListHandler :: ConnectionPool -> Handler ExercisesListResponse
+exercisesListHandler pool = do
+  chapters  <- liftIO $ runSqlPool (selectList [] [Asc Schema.ChapterOrderNum]) pool
+  exercises <- liftIO $ runSqlPool (selectList [] [Asc Schema.ExerciseOrderInChapter]) pool
+  let byChapter = Map.fromListWith (flip (++))
+        [ (Schema.exerciseChapterId (entityVal e), [e]) | e <- exercises ]
+      chapterResps = map (\c ->
+        let key = entityKey c
+            exs = sortBy (comparing (Schema.exerciseOrderInChapter . entityVal))
+                    (Map.findWithDefault [] key byChapter)
+        in toChapterResponse c exs
+        ) chapters
+  return $ ExercisesListResponse { responseChapters = chapterResps }
 
-exerciseByIdHandler :: Text -> Handler ExerciseClient
-exerciseByIdHandler eid
-  | eid == "hello-world" = return helloWorldExercise
-  | otherwise = jsonError err404 "exercise not found" "not_found"
+exerciseByIdHandler :: ConnectionPool -> Text -> Handler ExerciseClient
+exerciseByIdHandler pool eid = do
+  mEx <- liftIO $ runSqlPool (getBy (Schema.UniqueExerciseSlug eid)) pool
+  case mEx of
+    Nothing -> jsonError err404 "exercise not found" "not_found"
+    Just ex@(Entity _ exVal) -> do
+      mCh <- liftIO $ runSqlPool (get (Schema.exerciseChapterId exVal)) pool
+      case mCh of
+        Nothing -> jsonError err500 "chapter not found" "internal_error"
+        Just ch -> pure $ toExerciseClient (Schema.chapterSlug ch) ex
 
--- Hardcoded hidden test suite for hello-world (replaced by DB lookup in BE-08)
-
-helloWorldTests :: Text
-helloWorldTests =
-  "module Main where\n\
-  \import System.Exit (exitFailure, exitSuccess)\n\
-  \import HelloWorld\n\
-  \\n\
-  \assertEqual :: (Show a, Eq a) => String -> a -> a -> IO Bool\n\
-  \assertEqual lbl got want\n\
-  \  | got == want = putStrLn (\"  PASS: \" ++ lbl) >> return True\n\
-  \  | otherwise   = putStrLn (\"  FAIL: \" ++ lbl) >> return False\n\
-  \\n\
-  \main :: IO ()\n\
-  \main = do\n\
-  \  results <- sequence\n\
-  \    [ assertEqual \"greet returns Hello, World!\" greet \"Hello, World!\"\n\
-  \    ]\n\
-  \  let passed = length (filter id results)\n\
-  \      failed  = length results - passed\n\
-  \  putStrLn $ show (length results) ++ \" examples, \" ++ show failed ++ \" failures\"\n\
-  \  if failed == 0 then exitSuccess else exitFailure\n"
-
-submitHandler :: Judge0Config -> SubmitRequest -> Handler SubmitResponse
-submitHandler cfg req = do
+submitHandler :: Judge0Config -> ConnectionPool -> SubmitRequest -> Handler SubmitResponse
+submitHandler cfg pool req = do
   let eid  = submitExerciseId req
       code = submitCode req
-  if fromIntegral (length (show code)) > (50_000 :: Int)
+  if T.length code > 50_000
     then jsonError err413 "code exceeds 50KB limit" "too_large"
     else do
-      hiddenTests <- case eid of
-        "hello-world" -> pure helloWorldTests
-        _             -> jsonError err404 "exercise not found" "not_found"
+      mEx <- liftIO $ runSqlPool (getBy (Schema.UniqueExerciseSlug eid)) pool
+      (exerciseKey, hiddenTests) <- case mEx of
+        Nothing       -> jsonError err404 "exercise not found" "not_found"
+        Just (Entity key exVal) -> pure (key, Schema.exerciseHiddenTests exVal)
       result <- liftIO $ submitAndWait cfg eid code hiddenTests
+      now    <- liftIO getCurrentTime
+      liftIO $ runSqlPool (insert_ Schema.Submission
+        { Schema.submissionUserId      = Nothing
+        , Schema.submissionExerciseId  = exerciseKey
+        , Schema.submissionCode        = code
+        , Schema.submissionStatus      = srStatus result
+        , Schema.submissionOutput      = srOutput result
+        , Schema.submissionPassedCount = srPassedCount result
+        , Schema.submissionFailedCount = srFailedCount result
+        , Schema.submissionCreatedAt   = now
+        }) pool
       pure SubmitResponse
         { submitStatus      = statusToText (srStatus result)
         , submitOutput      = srOutput result
@@ -137,18 +145,47 @@ submitHandler cfg req = do
         , submitFailedCount = srFailedCount result
         }
 
+submissionHistoryHandler :: ConnectionPool -> Text -> Handler SubmissionHistoryResponse
+submissionHistoryHandler pool eid = do
+  mEx <- liftIO $ runSqlPool (getBy (Schema.UniqueExerciseSlug eid)) pool
+  exerciseKey <- case mEx of
+    Nothing          -> jsonError err404 "exercise not found" "not_found"
+    Just (Entity k _) -> pure k
+  subs <- liftIO $ runSqlPool
+    (selectList [Schema.SubmissionExerciseId ==. exerciseKey] [Desc Schema.SubmissionCreatedAt])
+    pool
+  let items = map toHistoryItem subs
+  pure $ SubmissionHistoryResponse { historySubmissions = items }
+  where
+    toHistoryItem (Entity key sub) = SubmissionHistoryItem
+      { histId          = fromSqlKey key
+      , histStatus      = statusToText (Schema.submissionStatus sub)
+      , histOutput      = Schema.submissionOutput sub
+      , histPassedCount = Schema.submissionPassedCount sub
+      , histFailedCount = Schema.submissionFailedCount sub
+      , histCreatedAt   = Schema.submissionCreatedAt sub
+      }
+
+progressHandler :: Handler ProgressResponse
+progressHandler = pure $ ProgressResponse { progressItems = [] }
+
 -- App
 
-server :: Judge0Config -> Server API
-server cfg =
+server :: Judge0Config -> ConnectionPool -> Server API
+server cfg pool =
   healthHandler
-    :<|> (exercisesListHandler :<|> exerciseByIdHandler)
-    :<|> submitHandler cfg
+    :<|> (exercisesListHandler pool :<|> exerciseByIdHandler pool)
+    :<|> submitHandler cfg pool
+    :<|> submissionHistoryHandler pool
+    :<|> progressHandler
 
-app :: Judge0Config -> RateLimiter -> Int -> Application
-app cfg limiter rateLimit =
+app :: Judge0Config -> RateLimiter -> Int -> ConnectionPool -> Application
+app cfg limiter rateLimit pool =
+  loggingMiddleware $
   rateLimitMiddleware limiter rateLimit $
-  serve (Proxy :: Proxy API) (server cfg)
+  serve (Proxy :: Proxy API) (server cfg pool)
+
+-- Middleware
 
 rateLimitMiddleware :: RateLimiter -> Int -> Application -> Application
 rateLimitMiddleware limiter maxPerMin inner req send =
@@ -165,3 +202,12 @@ rateLimitMiddleware limiter maxPerMin inner req send =
                ]
                (encode (object ["error" .= ("rate limit exceeded" :: Text), "code" .= ("rate_limited" :: Text)]))
     else inner req send
+
+loggingMiddleware :: Application -> Application
+loggingMiddleware inner req send =
+  inner req $ \resp -> do
+    let sc     = statusCode (responseStatus resp)
+        method = BC8.unpack (requestMethod req)
+        path   = "/" <> T.unpack (T.intercalate "/" (pathInfo req))
+    putStrLn $ method <> " " <> path <> " " <> show sc
+    send resp

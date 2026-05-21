@@ -4,7 +4,9 @@
 module API where
 
 import Data.Aeson (FromJSON (..), ToJSON (..), object, withObject, (.:), (.=))
+import Data.Int (Int64)
 import Data.Text (Text)
+import Data.Time (UTCTime)
 import Schema (SubmissionStatus (..))
 import Servant
 
@@ -15,7 +17,7 @@ newtype HealthResponse = HealthResponse {status :: Text}
 instance ToJSON HealthResponse where
   toJSON r = object ["status" .= status r]
 
--- Exercises (client-facing schema — hidden_test_suite and canonical_solution never included)
+-- Exercises (client-facing schema — hiddenTests and canonicalSolution never included)
 
 data ExerciseClient = ExerciseClient
   { exerciseId          :: Text
@@ -42,6 +44,7 @@ data ChapterResponse = ChapterResponse
   { chapterSlug        :: Text
   , chapterTitle       :: Text
   , chapterDescription :: Text
+  , chapterLesson      :: Text
   , chapterExercises   :: [ExerciseClient]
   }
 
@@ -50,6 +53,7 @@ instance ToJSON ChapterResponse where
     [ "slug"        .= chapterSlug c
     , "title"       .= chapterTitle c
     , "description" .= chapterDescription c
+    , "lesson"      .= chapterLesson c
     , "exercises"   .= chapterExercises c
     ]
 
@@ -86,6 +90,58 @@ instance ToJSON SubmitResponse where
     , "failedCount"  .= submitFailedCount r
     ]
 
+-- Submission history (BE-10)
+
+data SubmissionHistoryItem = SubmissionHistoryItem
+  { histId          :: Int64
+  , histStatus      :: Text
+  , histOutput      :: Text
+  , histPassedCount :: Int
+  , histFailedCount :: Int
+  , histCreatedAt   :: UTCTime
+  }
+
+instance ToJSON SubmissionHistoryItem where
+  toJSON h = object
+    [ "id"          .= histId h
+    , "status"      .= histStatus h
+    , "output"      .= histOutput h
+    , "passedCount" .= histPassedCount h
+    , "failedCount" .= histFailedCount h
+    , "createdAt"   .= histCreatedAt h
+    ]
+
+newtype SubmissionHistoryResponse = SubmissionHistoryResponse
+  { historySubmissions :: [SubmissionHistoryItem] }
+
+instance ToJSON SubmissionHistoryResponse where
+  toJSON r = object ["submissions" .= historySubmissions r]
+
+-- Progress (BE-16) — empty until auth is wired (Phase 9)
+
+data ProgressItem = ProgressItem
+  { progressExerciseId     :: Text
+  , progressStatus         :: Text
+  , progressFirstPassedAt  :: Maybe UTCTime
+  , progressLastSubmitted  :: UTCTime
+  }
+
+instance ToJSON ProgressItem where
+  toJSON p = object
+    [ "exerciseId"      .= progressExerciseId p
+    , "status"          .= progressStatus p
+    , "firstPassedAt"   .= progressFirstPassedAt p
+    , "lastSubmittedAt" .= progressLastSubmitted p
+    ]
+
+newtype ProgressResponse = ProgressResponse
+  { progressItems :: [ProgressItem] }
+
+instance ToJSON ProgressResponse where
+  toJSON r = object ["progress" .= progressItems r]
+
+-- Status helpers
+
 statusToText :: SubmissionStatus -> Text
 statusToText StatusPass         = "pass"
 statusToText StatusFail         = "fail"
@@ -105,4 +161,15 @@ type ExercisesAPI =
 type SubmissionsAPI =
   "api" :> "submissions" :> ReqBody '[JSON] SubmitRequest :> Post '[JSON] SubmitResponse
 
-type API = HealthAPI :<|> ExercisesAPI :<|> SubmissionsAPI
+type SubmissionHistoryAPI =
+  "api" :> "exercises" :> Capture "id" Text :> "submissions" :> Get '[JSON] SubmissionHistoryResponse
+
+type ProgressAPI =
+  "api" :> "progress" :> Get '[JSON] ProgressResponse
+
+type API =
+       HealthAPI
+  :<|> ExercisesAPI
+  :<|> SubmissionsAPI
+  :<|> SubmissionHistoryAPI
+  :<|> ProgressAPI
