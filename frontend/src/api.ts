@@ -1,4 +1,4 @@
-import type { Exercise, ExercisesListResponse, SubmissionResult, SubmitRequest } from './types';
+import type { Exercise, ExercisesListResponse, SubmissionHistoryResponse, SubmissionResult, SubmitRequest } from './types';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, init);
@@ -23,4 +23,8 @@ export function submitCode(req: SubmitRequest): Promise<SubmissionResult> {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(req),
   });
+}
+
+export function getHistory(exerciseId: string): Promise<SubmissionHistoryResponse> {
+  return request<SubmissionHistoryResponse>(`/api/exercises/${exerciseId}/submissions`);
 }

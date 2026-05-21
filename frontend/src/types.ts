@@ -22,7 +22,21 @@ export interface Chapter {
   slug: string;
   title: string;
   description: string;
+  lesson: string;
   exercises: Exercise[];
+}
+
+export interface SubmissionHistoryItem {
+  id: number;
+  status: SubmissionStatus;
+  output: string;
+  passedCount: number;
+  failedCount: number;
+  createdAt: string;
+}
+
+export interface SubmissionHistoryResponse {
+  submissions: SubmissionHistoryItem[];
 }
 
 export interface ExercisesListResponse {
