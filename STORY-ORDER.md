@@ -89,15 +89,18 @@ Each phase should be independently testable before starting the next.
 
 *Can proceed in parallel with Phases 7–8. Already substantially complete.*
 
-| Action | Detail |
-|--------|--------|
-| Review | Read through all 30 exercises in `CURRICULUM.json`. Verify stub code compiles, hints are useful, test cases are correct. |
-| Fix | Correct any exercises found to be broken or unclear. |
-| Extend | Optionally add exercises beyond the initial 30 if gaps are identified. |
+| ID | Action | Detail |
+|----|--------|--------|
+| — | Review | Read through all 30 exercises in `CURRICULUM.json`. Verify stub code compiles, hints are useful, test cases are correct. |
+| — | Fix | Correct any exercises found to be broken or unclear. |
+| — | Extend | Optionally add exercises beyond the initial 30 if gaps are identified. |
+| CONTENT-01 | Write chapter lessons | Write `curriculum/lessons/<slug>.md` for each of the 6 chapters. Each lesson should be self-contained enough that a reader can attempt all exercises in the chapter without leaving the site. Include: key concepts, type signatures to know, worked examples, and pointers to Hoogle/docs for deeper reference. |
 
 **Note:** The `implementing-show` exercise (ID 28) uses Unicode suit symbols via `\9827` etc. Verify these display correctly in HSpec output when the test harness is wired up.
 
-**Phase complete when:** All 30 exercises have been manually reviewed and any broken ones fixed.
+**Chapters needing lessons:** `basics`, `functions`, `lists`, `types`, `pattern-matching`, `recursion`, `typeclasses`.
+
+**Phase complete when:** All 35 exercises have been manually reviewed, any broken ones fixed, and all 7 lesson files exist in `curriculum/lessons/`.
 
 ---
 
@@ -112,6 +115,8 @@ Each phase should be independently testable before starting the next.
 | BE-16 | Progress endpoint |
 | BE-17 | Fully ordered chapter-grouped exercise list |
 | BE-18 | Request logging middleware |
+| BE-20 | Add `lesson` column to Chapter; seed from `curriculum/lessons/<slug>.md` at startup |
+| BE-21 | Include `lesson` field in chapter API response (`/api/exercises`) |
 
 **Note (BE-10):** Auth is not yet active in this phase. The history endpoint returns submissions without user filtering — all submissions for the exercise are returned. This is acceptable for pre-auth development. BE-13 (Phase 9) locks it to the authenticated user.
 
@@ -129,6 +134,7 @@ Each phase should be independently testable before starting the next.
 | FE-08 | Progress indicators (progress badges in sidebar) |
 | FE-09 | Hint reveal (progressive, one at a time) |
 | FE-10 | Submission history panel |
+| FE-22 | Lesson panel per chapter — render `lesson` markdown above exercise list; requires a markdown renderer (e.g. `marked`) |
 
 **Note (FE-08):** Progress data requires auth (Phase 9). In this phase, mock the `GET /api/progress` response locally or render the component with placeholder/empty state. Wire to the real endpoint in Phase 9.
 
@@ -202,13 +208,13 @@ Each phase should be independently testable before starting the next.
 | 3 — Data model | 2 | BE-06–07 |
 | 4 — Backend skeleton | 7 | BE-01–05, INFRA-05–06, INFRA-08 |
 | 5 — Frontend skeleton + staging | 7 | FE-01–04, INFRA-07, INFRA-09–10 |
-| 6 — Curriculum review | — | (review task, not a formal story) |
-| 7 — Backend data layer | 7 | BE-08–10, BE-15–18 |
-| 8 — Frontend navigation | 6 | FE-05–10 |
+| 6 — Curriculum review + lessons | 1 | CONTENT-01 (+ review tasks) |
+| 7 — Backend data layer | 9 | BE-08–10, BE-15–18, BE-20–21 |
+| 8 — Frontend navigation | 7 | FE-05–10, FE-22 |
 | 9 — Auth | 9 | BE-11–14, FE-11–15 |
 | 10 — Polish | 5 | FE-16–20 |
 | 11 — Production | 6 | INFRA-11–16 |
-| **Total** | **53** | |
+| **Total** | **57** | |
 
 ---
 

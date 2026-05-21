@@ -49,6 +49,9 @@ HSpec is unavailable in Judge0's environment. Replaced with a minimal `assertEqu
 **User identifier: `clerkId Text`**
 Clerk user IDs are strings (`user_2Nxxx`), not integers. Using the Clerk user ID directly is simpler than querying the underlying GitHub user ID from social connection data, and is provider-neutral for future OAuth additions. Fixed from original `githubId Int64`. See DATA-MODEL.md.
 
+**Lesson content: one markdown file per chapter, stored in `curriculum/lessons/<slug>.md`**
+Lessons are per-chapter (one lesson covers all exercises in that chapter). Stored as markdown files rather than inline JSONB in CURRICULUM.json because lesson prose will be several hundred words with code blocks — unpleasant to maintain as escaped strings in JSON. The seed process reads `curriculum/lessons/<slug>.md` and stores the content in a `lesson TEXT` column on the `chapter` table. The lesson is included in the chapter API response and rendered as markdown in the frontend. Goal: learners should be able to attempt all exercises in a chapter after reading the lesson, without leaving the site. Hoogle/docs links are encouraged for deeper reference.
+
 ---
 
 ## 2026-05-17

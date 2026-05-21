@@ -77,6 +77,7 @@ Chapter
   slug        Text
   title       Text
   description Text
+  lesson      Text        -- markdown; seeded from curriculum/lessons/<slug>.md
   orderNum    Int
   UniqueChapterSlug slug
   deriving Show Eq
@@ -181,6 +182,7 @@ CREATE TABLE "chapter" (
   "slug"        TEXT NOT NULL,
   "title"       TEXT NOT NULL,
   "description" TEXT NOT NULL,
+  "lesson"      TEXT NOT NULL,
   "order_num"   INT  NOT NULL,
   CONSTRAINT "unique_chapter_slug" UNIQUE ("slug")
 );
