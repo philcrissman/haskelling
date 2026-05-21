@@ -19,6 +19,7 @@
     "vite": "^8.0.12"
   },
   "dependencies": {
+    "@clerk/clerk-js": "^6.12.0",
     "@codemirror/language": "^6.12.3",
     "@codemirror/legacy-modes": "^6.5.3",
     "codemirror": "^6.0.2",

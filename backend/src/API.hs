@@ -159,13 +159,20 @@ type ExercisesAPI =
   :<|> "api" :> "exercises" :> Capture "id" Text :> Get '[JSON] ExerciseClient
 
 type SubmissionsAPI =
-  "api" :> "submissions" :> ReqBody '[JSON] SubmitRequest :> Post '[JSON] SubmitResponse
+  "api" :> "submissions"
+    :> Header "Authorization" Text
+    :> ReqBody '[JSON] SubmitRequest
+    :> Post '[JSON] SubmitResponse
 
 type SubmissionHistoryAPI =
-  "api" :> "exercises" :> Capture "id" Text :> "submissions" :> Get '[JSON] SubmissionHistoryResponse
+  "api" :> "exercises" :> Capture "id" Text :> "submissions"
+    :> Header "Authorization" Text
+    :> Get '[JSON] SubmissionHistoryResponse
 
 type ProgressAPI =
-  "api" :> "progress" :> Get '[JSON] ProgressResponse
+  "api" :> "progress"
+    :> Header "Authorization" Text
+    :> Get '[JSON] ProgressResponse
 
 type API =
        HealthAPI

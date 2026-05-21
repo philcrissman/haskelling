@@ -1,5 +1,6 @@
 module Main where
 
+import Auth (newAuthEnv, parseJwksUrl)
 import Control.Monad (when)
 import Data.ByteString.Char8 qualified as BC8
 import Data.Text qualified as T
@@ -66,6 +67,20 @@ main = do
       , judge0Mock    = isMock
       }
 
+  -- Clerk auth
+  authEnv <- do
+    pk <- lookupEnv "CLERK_PUBLISHABLE_KEY" >>= \case
+      Nothing -> die "CLERK_PUBLISHABLE_KEY is not set"
+      Just k  -> pure (T.pack k)
+    sk <- lookupEnv "CLERK_SECRET_KEY" >>= \case
+      Nothing -> die "CLERK_SECRET_KEY is not set"
+      Just k  -> pure (T.pack k)
+    jwksUrl <- case parseJwksUrl pk of
+      Left err  -> die ("Failed to derive JWKS URL: " <> T.unpack err)
+      Right url -> pure url
+    putStrLn $ "haskelling: Clerk JWKS URL: " <> T.unpack jwksUrl
+    newAuthEnv jwksUrl sk
+
   -- Rate limiting
   rateLimitPerIp <- do
     s <- lookupEnv "RATE_LIMIT_PER_IP"
@@ -76,4 +91,4 @@ main = do
 
   -- Serve
   putStrLn $ "haskelling: listening on port " <> show port
-  run port (app judge0Cfg limiter rateLimitPerIp pool)
+  run port (app judge0Cfg limiter rateLimitPerIp pool authEnv)

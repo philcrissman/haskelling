@@ -1,7 +1,13 @@
 import type { Exercise, ExercisesListResponse, SubmissionHistoryResponse, SubmissionResult, SubmitRequest } from './types';
+import { getToken } from './lib/auth';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(path, init);
+  const token = await getToken();
+  const headers: Record<string, string> = {
+    ...(init?.headers as Record<string, string> ?? {}),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+  const res = await fetch(path, { ...init, headers });
   if (!res.ok) {
     const body = await res.text();
     throw new Error(`HTTP ${res.status}: ${body}`);

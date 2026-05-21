@@ -13,6 +13,7 @@ library
   hs-source-dirs:  src
   exposed-modules:
     API
+    Auth
     Database
     Judge0
     Schema
@@ -28,7 +29,9 @@ library
     http-client           >= 0.7,
     http-client-tls       >= 0.3,
     http-types            >= 0.12,
+    jose                  >= 0.10 && < 0.11,
     monad-logger          >= 0.3,
+    mtl                   >= 2.2,
     network               >= 3.1,
     stm                   >= 2.5,
     persistent            >= 2.14,

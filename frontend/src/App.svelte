@@ -1,10 +1,13 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { clerk, initClerk, isSignedIn, openSignIn, signOut } from './lib/auth';
   import Sidebar from './lib/Sidebar.svelte';
   import ExercisePage from './lib/ExercisePage.svelte';
   import { getExercises } from './api';
   import type { Chapter, Exercise } from './types';
 
+  let clerkReady = $state(false);
+  let signedIn = $state(false);
   let chapters: Chapter[] = $state([]);
   let loading = $state(true);
   let fetchError: string | null = $state(null);
@@ -20,6 +23,14 @@
       : ''
   );
 
+  const userDisplayName = $derived(
+    clerk.user
+      ? (clerk.user.username ?? clerk.user.firstName ?? clerk.user.primaryEmailAddress?.emailAddress ?? 'User')
+      : ''
+  );
+
+  const userAvatarUrl = $derived(clerk.user?.imageUrl ?? null);
+
   function parseHash(): string | null {
     const m = window.location.hash.match(/^#\/exercises\/(.+)$/);
     return m ? decodeURIComponent(m[1]) : null;
@@ -30,12 +41,9 @@
     currentId = id;
   }
 
-  onMount(async () => {
-    currentId = parseHash();
-    window.addEventListener('hashchange', () => {
-      currentId = parseHash();
-    });
-
+  async function loadExercises() {
+    loading = true;
+    fetchError = null;
     try {
       const res = await getExercises();
       chapters = res.chapters;
@@ -48,17 +56,70 @@
     } finally {
       loading = false;
     }
+  }
+
+  onMount(async () => {
+    currentId = parseHash();
+    window.addEventListener('hashchange', () => {
+      currentId = parseHash();
+    });
+
+    await initClerk();
+    clerkReady = true;
+    signedIn = isSignedIn();
+
+    clerk.addListener((resources) => {
+      const nowSignedIn = !!resources.user;
+      if (nowSignedIn && !signedIn) {
+        signedIn = true;
+        loadExercises();
+      } else if (!nowSignedIn && signedIn) {
+        signedIn = false;
+        chapters = [];
+      }
+    });
+
+    if (signedIn) await loadExercises();
   });
+
+  async function handleSignOut() {
+    await signOut();
+    signedIn = false;
+    chapters = [];
+  }
 </script>
 
-{#if loading}
+{#if !clerkReady}
   <div class="app-state">Loading…</div>
+
+{:else if !signedIn}
+  <div class="sign-in-bg">
+    <div class="sign-in-card">
+      <h1 class="brand">haskelling</h1>
+      <p class="tagline">Learn Haskell by doing</p>
+      <button class="sign-in-btn" onclick={openSignIn}>
+        Sign in with GitHub
+      </button>
+    </div>
+  </div>
+
+{:else if loading}
+  <div class="app-state">Loading…</div>
+
 {:else if fetchError}
   <div class="app-state app-state--error">{fetchError}</div>
+
 {:else}
   <div class="app-layout">
     <aside class="sidebar-container">
-      <Sidebar {chapters} currentId={currentId ?? ''} onSelect={navigate} />
+      <Sidebar
+        {chapters}
+        currentId={currentId ?? ''}
+        onSelect={navigate}
+        avatarUrl={userAvatarUrl}
+        displayName={userDisplayName}
+        onSignOut={handleSignOut}
+      />
     </aside>
     <main class="main-content">
       {#if currentExercise}
@@ -106,7 +167,65 @@
     font-size: 0.95rem;
   }
 
-  .app-state--error {
-    color: #dc2626;
+  .app-state--error { color: #dc2626; }
+
+  /* Sign-in screen */
+
+  .sign-in-bg {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    background: #f5f3ff;
   }
+
+  @media (prefers-color-scheme: dark) {
+    .sign-in-bg { background: #1a1025; }
+  }
+
+  .sign-in-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    padding: 3rem 2.5rem;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    text-align: center;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .sign-in-card { background: #1e1535; box-shadow: 0 4px 24px rgba(0,0,0,0.4); }
+  }
+
+  .brand {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #6d28d9;
+    margin: 0;
+  }
+
+  .tagline {
+    margin: 0;
+    color: #888;
+    font-size: 0.95rem;
+  }
+
+  .sign-in-btn {
+    margin-top: 0.5rem;
+    padding: 0.65rem 1.75rem;
+    font-size: 0.95rem;
+    font-weight: 500;
+    background: #24292e;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .sign-in-btn:hover { background: #1a1e22; }
 </style>
