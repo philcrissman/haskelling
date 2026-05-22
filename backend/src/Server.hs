@@ -25,7 +25,7 @@ import Data.Time (UTCTime, diffUTCTime, getCurrentTime)
 import Database.Persist (Entity (..), SelectOpt (..), get, getBy, insert, insert_, selectList, update, (==.), (=.))
 import Database.Persist.Postgresql (ConnectionPool, runSqlPool)
 import Database.Persist.Sql (SqlPersistT, fromSqlKey, rawExecute)
-import Judge0 (Judge0Config (..), SubmissionResult (..), submitAndWait)
+import Judge0 (Judge0Config (..), Judge0Error (..), SubmissionResult (..), submitAndWait)
 import Network.HTTP.Types (statusCode, status429)
 import Network.Socket (SockAddr (..), hostAddressToTuple)
 import Network.Wai (pathInfo, remoteHost, requestMethod, responseStatus, responseLBS)
@@ -190,7 +190,12 @@ submitHandler cfg pool authEnv userLimiter rateLimitPerUser mAuth req = do
       (exerciseKey, hiddenTests) <- case mEx of
         Nothing       -> jsonError err404 "exercise not found" "not_found"
         Just (Entity key exVal) -> pure (key, Schema.exerciseHiddenTests exVal)
-      result <- liftIO $ submitAndWait cfg eid code hiddenTests
+      judge0Result <- liftIO $ submitAndWait cfg eid code hiddenTests
+      result <- case judge0Result of
+        Left (Judge0Unreachable _) -> jsonError err502 "evaluation service unavailable" "sandbox_unavailable"
+        Left Judge0PollTimeout     -> jsonError err504 "evaluation service timed out"    "sandbox_timeout"
+        Left (Judge0ParseError _)  -> jsonError err500 "unexpected evaluation response"  "internal_error"
+        Right r                    -> pure r
       now    <- liftIO getCurrentTime
       liftIO $ runSqlPool (do
         insert_ Schema.Submission

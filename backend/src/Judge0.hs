@@ -1,11 +1,13 @@
 module Judge0
   ( Judge0Config (..)
+  , Judge0Error (..)
   , SubmissionResult (..)
   , submitAndWait
   ) where
 
 import Codec.Archive.Zip (addEntryToArchive, emptyArchive, fromArchive, toEntry)
 import Control.Concurrent (threadDelay)
+import Control.Exception (SomeException, try)
 import Data.Aeson (FromJSON (..), eitherDecode, encode, object, withObject, (.:), (.:?), (.=))
 import Data.Aeson.Types (parseMaybe)
 import Data.ByteString.Base64 qualified as B64
@@ -25,6 +27,14 @@ data Judge0Config = Judge0Config
   , judge0ApiHost :: Text
   , judge0Mock    :: Bool
   }
+
+-- Typed errors returned to callers
+
+data Judge0Error
+  = Judge0Unreachable Text  -- network failure or unexpected HTTP error → 502
+  | Judge0PollTimeout       -- poll attempts exhausted → 504
+  | Judge0ParseError Text   -- unexpected response shape → 500
+  deriving Show
 
 -- Internal Judge0 response types
 
@@ -157,17 +167,19 @@ makeAdditionalFiles exerciseSlug userCode =
       archive    = addEntryToArchive entry emptyArchive
   in TE.decodeUtf8 . B64.encode . BSL.toStrict . fromArchive $ archive
 
-submitAndWait :: Judge0Config -> Text -> Text -> Text -> IO SubmissionResult
+submitAndWait :: Judge0Config -> Text -> Text -> Text -> IO (Either Judge0Error SubmissionResult)
 submitAndWait cfg exerciseSlug userCode hiddenTests
-  | judge0Mock cfg = pure mockResult
+  | judge0Mock cfg = pure (Right mockResult)
   | otherwise = do
       mgr <- newManager tlsManagerSettings
-      token <- submitBatch cfg mgr exerciseSlug userCode hiddenTests
-      pollResult cfg mgr token
+      tokenResult <- submitBatch cfg mgr exerciseSlug userCode hiddenTests
+      case tokenResult of
+        Left  err   -> pure (Left err)
+        Right token -> pollResult cfg mgr token
 
 -- source_code = the test runner (module Main); additional_files = zip of the
 -- user's solution so the import in the test runner resolves.
-submitBatch :: Judge0Config -> Manager -> Text -> Text -> Text -> IO Text
+submitBatch :: Judge0Config -> Manager -> Text -> Text -> Text -> IO (Either Judge0Error Text)
 submitBatch cfg mgr exerciseSlug userCode hiddenTests = do
   let additionalFiles = makeAdditionalFiles exerciseSlug userCode
       payload         = encode $ object
@@ -179,46 +191,52 @@ submitBatch cfg mgr exerciseSlug userCode hiddenTests = do
         , "wall_time_limit"    .= (30 :: Int)
         , "memory_limit"       .= (512000 :: Int)
         ]
-      url         = T.unpack (judge0ApiUrl cfg) <> "/submissions?base64_encoded=true&wait=false"
-  initReq <- parseRequest url
-  let req = initReq
-        { method      = "POST"
-        , requestBody = RequestBodyLBS payload
-        , requestHeaders =
-            [ ("Content-Type",    "application/json")
-            , ("x-rapidapi-key",  TE.encodeUtf8 (judge0ApiKey  cfg))
-            , ("x-rapidapi-host", TE.encodeUtf8 (judge0ApiHost cfg))
-            ]
-        }
-  resp <- httpLbs req mgr
-  case eitherDecode (responseBody resp) of
-    Left err  -> fail $ "Judge0 submit parse error: " <> err
-    Right obj -> case parseMaybe (.: "token") obj of
-      Nothing    -> fail "Judge0 submit: no token in response"
-      Just token -> pure token
+      url = T.unpack (judge0ApiUrl cfg) <> "/submissions?base64_encoded=true&wait=false"
+  httpResult <- (try $ do
+    initReq <- parseRequest url
+    let req = initReq
+          { method      = "POST"
+          , requestBody = RequestBodyLBS payload
+          , requestHeaders =
+              [ ("Content-Type",    "application/json")
+              , ("x-rapidapi-key",  TE.encodeUtf8 (judge0ApiKey  cfg))
+              , ("x-rapidapi-host", TE.encodeUtf8 (judge0ApiHost cfg))
+              ]
+          }
+    httpLbs req mgr) :: IO (Either SomeException (Response BSL.ByteString))
+  case httpResult of
+    Left ex -> pure $ Left (Judge0Unreachable (T.pack (show ex)))
+    Right resp -> case eitherDecode (responseBody resp) of
+      Left err  -> pure $ Left (Judge0ParseError (T.pack ("submit parse: " <> err)))
+      Right obj -> case parseMaybe (.: "token") obj of
+        Nothing    -> pure $ Left (Judge0ParseError "no token in submit response")
+        Just token -> pure $ Right token
 
 -- Poll GET /submissions/:token until status is not queued/processing
-pollResult :: Judge0Config -> Manager -> Text -> IO SubmissionResult
+pollResult :: Judge0Config -> Manager -> Text -> IO (Either Judge0Error SubmissionResult)
 pollResult cfg mgr token = go (0 :: Int)
   where
     go attempts
-      | attempts >= 15 = pure $ SubmissionResult StatusTimeout "Timed out waiting for result." 0 0
+      | attempts >= 15 = pure (Left Judge0PollTimeout)
       | otherwise = do
           threadDelay 2_000_000  -- 2 seconds
           let url = T.unpack (judge0ApiUrl cfg) <> "/submissions/" <> T.unpack token
                  <> "?base64_encoded=true&fields=status,stdout,stderr,compile_output,message"
-          initReq <- parseRequest url
-          let req = initReq
-                { requestHeaders =
-                    [ ("x-rapidapi-key",  TE.encodeUtf8 (judge0ApiKey  cfg))
-                    , ("x-rapidapi-host", TE.encodeUtf8 (judge0ApiHost cfg))
-                    ]
-                }
-          resp <- httpLbs req mgr
-          case eitherDecode (responseBody resp) of
-            Left err -> fail $ "Judge0 poll parse error: " <> err
-            Right j0resp ->
-              let sid = statusId (j0Status j0resp)
-              in if sid <= 2  -- 1 = In Queue, 2 = Processing
-                   then go (attempts + 1)
-                   else pure (interpretResult j0resp)
+          httpResult <- (try $ do
+            initReq <- parseRequest url
+            let req = initReq
+                  { requestHeaders =
+                      [ ("x-rapidapi-key",  TE.encodeUtf8 (judge0ApiKey  cfg))
+                      , ("x-rapidapi-host", TE.encodeUtf8 (judge0ApiHost cfg))
+                      ]
+                  }
+            httpLbs req mgr) :: IO (Either SomeException (Response BSL.ByteString))
+          case httpResult of
+            Left ex -> pure $ Left (Judge0Unreachable (T.pack (show ex)))
+            Right resp -> case eitherDecode (responseBody resp) of
+              Left err -> pure $ Left (Judge0ParseError (T.pack ("poll parse: " <> err)))
+              Right j0resp ->
+                let sid = statusId (j0Status j0resp)
+                in if sid <= 2  -- 1 = In Queue, 2 = Processing
+                     then go (attempts + 1)
+                     else pure (Right (interpretResult j0resp))
