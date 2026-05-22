@@ -190,14 +190,14 @@ Provision the production Fly.io application. Production deploys are manual (not 
 ### INFRA-12: Frontend production deployment
 
 **Description:**
-Connect the frontend repository to Vercel or Netlify for automated deployments. The frontend deploys on every push to `main`.
+Deploy the frontend SPA to Vercel or Netlify. The frontend is a static Vite build that calls the Fly.io backend via `VITE_API_BASE_URL`.
 
 **Acceptance criteria:**
 - [ ] The frontend project is connected to Vercel or Netlify via the dashboard
-- [ ] `VITE_CLERK_PUBLISHABLE_KEY` and `VITE_API_BASE_URL` are set as environment variables in the Vercel/Netlify project (production values)
-- [ ] Preview deployments are created for pull requests, using staging API and staging Clerk keys
+- [ ] `VITE_CLERK_PUBLISHABLE_KEY` and `VITE_API_BASE_URL` are set as environment variables pointing at the production backend
 - [ ] The production build deploys automatically on merge to `main`
-- [ ] The production frontend URL is confirmed to load and reach the production API
+- [ ] The deployed frontend URL loads the app and successfully reaches the production API
+- [ ] The Vite build command (`npm run build`) and output directory (`dist`) are configured correctly in the Vercel/Netlify project settings
 
 ---
 

@@ -67,21 +67,20 @@ Each phase should be independently testable before starting the next.
 
 ---
 
-## Phase 5 — Frontend Walking Skeleton + Staging
+## Phase 5 — Frontend Walking Skeleton
 
-*The UI loop works end-to-end. Staging environment is live.*
+*The UI loop works end-to-end.*
 
 | ID | Story |
 |----|-------|
-| FE-01 | Scaffold Vite + React + TypeScript (confirm framework before starting) |
+| FE-01 | Scaffold Vite + Svelte + TypeScript |
 | FE-02 | CodeMirror 6 editor component |
 | FE-03 | Hardcoded exercise page |
 | FE-04 | Submit code and display result |
-| INFRA-09 | Fly.io staging app setup |
-| INFRA-10 | Staging database setup |
-| INFRA-07 | GitHub Actions: auto-deploy to staging on merge to `main` |
 
-**Phase complete when:** A user can open the staging URL, edit the hello-world stub in the browser, submit it, and see a pass/fail result returned from Judge0.
+*(INFRA-09 and INFRA-10 — separate staging app and database — descoped in favour of a single production instance.)*
+
+**Phase complete when:** A user can open the app locally, edit the hello-world stub in the browser, submit it, and see a pass/fail result returned from Judge0.
 
 ---
 
@@ -118,7 +117,7 @@ Each phase should be independently testable before starting the next.
 | BE-20 | Add `lesson` column to Chapter; seed from `curriculum/lessons/<slug>.md` at startup |
 | BE-21 | Include `lesson` field in chapter API response (`/api/exercises`) |
 
-**Note (BE-10):** Auth is not yet active in this phase. The history endpoint returns submissions without user filtering — all submissions for the exercise are returned. This is acceptable for pre-auth development. BE-13 (Phase 9) locks it to the authenticated user.
+**Note (BE-10):** Auth was not yet active when this phase was implemented — the history endpoint returned all submissions for an exercise. BE-13 (Phase 9) locked it to the authenticated user.
 
 **Phase complete when:** All exercises load from the database, submissions are persisted, submission history is returned, and progress is tracked and exposed via the API.
 
@@ -193,6 +192,7 @@ Each phase should be independently testable before starting the next.
 | ID | Story |
 |----|-------|
 | INFRA-07 | GitHub Actions: auto-deploy to production on merge to main |
+| INFRA-12 | Frontend production deployment (Vercel or Netlify) |
 | INFRA-17 | Create database indexes |
 | INFRA-18 | Custom GitHub OAuth App — Clerk branding (shows "Haskelling" on OAuth consent screen) |
 | INFRA-19 | Switch to Clerk production instance |
@@ -215,14 +215,14 @@ Each phase should be independently testable before starting the next.
 | 2 — Eval spike | — | (research, not a formal story) |
 | 3 — Data model | 2 | BE-06–07 |
 | 4 — Backend skeleton | 7 | BE-01–05, INFRA-05–06, INFRA-08 |
-| 5 — Frontend skeleton + staging | 7 | FE-01–04, INFRA-07, INFRA-09–10 |
+| 5 — Frontend skeleton | 4 | FE-01–04 |
 | 6 — Curriculum review + lessons | 1 | CONTENT-01 (+ review tasks) |
 | 7 — Backend data layer | 9 | BE-08–10, BE-15–18, BE-20–21 |
 | 8 — Frontend navigation | 7 | FE-05–10, FE-22 |
-| 9 — Auth | 9 | BE-11–14, FE-11–15 |
-| 10 — Polish | 7 | FE-16–20, BE-22, FE-23 |
-| 11 — Production | 6 | INFRA-11–16 |
-| **Total** | **59** | |
+| 9 — Auth | 8 | BE-11–13, FE-11–15 |
+| 10 — Polish | 10 | BE-14, BE-19b, FE-16–21, BE-22, FE-23 |
+| 11 — Production | 11 | INFRA-07, INFRA-12–15, INFRA-17–21 |
+| **Total** | **63** | |
 
 ---
 
@@ -233,4 +233,4 @@ These must be resolved before the indicated phase:
 | Decision | Resolve before | Note |
 |----------|---------------|------|
 | ~~Frontend framework~~ | ~~Phase 5 (FE-01)~~ | **Resolved: Svelte** |
-| Judge0 `additional_files` support in cloud tier | Phase 2 | Determines injection approach for BE-03 |
+| ~~Judge0 `additional_files` support in cloud tier~~ | ~~Phase 2~~ | **Resolved: supported; confirmed in Phase 2 spike** |
