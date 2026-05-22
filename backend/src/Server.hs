@@ -11,6 +11,7 @@ import Auth (AuthEnv)
 import Auth qualified
 import Control.Concurrent.STM
 import Control.Exception (SomeException, try)
+import Control.Monad (when)
 import Control.Monad.IO.Class (liftIO)
 import Data.Aeson (encode, object, (.=))
 import Data.ByteString.Char8 qualified as BC8
@@ -169,9 +170,17 @@ exerciseByIdHandler pool eid = do
         Nothing -> jsonError err500 "chapter not found" "internal_error"
         Just ch -> pure $ toExerciseClient (Schema.chapterSlug ch) ex
 
-submitHandler :: Judge0Config -> ConnectionPool -> AuthEnv -> Maybe Text -> SubmitRequest -> Handler SubmitResponse
-submitHandler cfg pool authEnv mAuth req = do
+submitHandler :: Judge0Config -> ConnectionPool -> AuthEnv -> RateLimiter -> Int -> Maybe Text -> SubmitRequest -> Handler SubmitResponse
+submitHandler cfg pool authEnv userLimiter rateLimitPerUser mAuth req = do
   userId <- requireUser authEnv pool mAuth
+  now0   <- liftIO getCurrentTime
+  let userKey = T.pack (show (fromSqlKey userId))
+  userAllowed <- liftIO $ atomically $ checkAndIncrement userLimiter rateLimitPerUser userKey now0
+  when (not userAllowed) $
+    throwError err429
+      { errBody    = encode (object ["error" .= ("rate limit exceeded" :: Text), "code" .= ("rate_limited" :: Text)])
+      , errHeaders = [("Content-Type", "application/json"), ("Retry-After", "60")]
+      }
   let eid  = submitExerciseId req
       code = submitCode req
   if T.length code > 50_000
@@ -299,20 +308,20 @@ progressStatusToText Schema.Passed     = "passed"
 
 -- App
 
-server :: Judge0Config -> ConnectionPool -> AuthEnv -> Server API
-server cfg pool authEnv =
+server :: Judge0Config -> ConnectionPool -> AuthEnv -> RateLimiter -> Int -> Server API
+server cfg pool authEnv userLimiter rateLimitPerUser =
   healthHandler pool
     :<|> meHandler authEnv pool
     :<|> (exercisesListHandler pool :<|> exerciseByIdHandler pool)
-    :<|> submitHandler cfg pool authEnv
+    :<|> submitHandler cfg pool authEnv userLimiter rateLimitPerUser
     :<|> submissionHistoryHandler pool authEnv
     :<|> progressHandler authEnv pool
 
-app :: Judge0Config -> RateLimiter -> Int -> ConnectionPool -> AuthEnv -> Application
-app cfg limiter rateLimit pool authEnv =
+app :: Judge0Config -> RateLimiter -> Int -> RateLimiter -> Int -> ConnectionPool -> AuthEnv -> Application
+app cfg ipLimiter rateLimitPerIp userLimiter rateLimitPerUser pool authEnv =
   loggingMiddleware $
-  rateLimitMiddleware limiter rateLimit $
-  serve (Proxy :: Proxy API) (server cfg pool authEnv)
+  rateLimitMiddleware ipLimiter rateLimitPerIp $
+  serve (Proxy :: Proxy API) (server cfg pool authEnv userLimiter rateLimitPerUser)
 
 -- Middleware
 

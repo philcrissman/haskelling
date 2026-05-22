@@ -87,8 +87,14 @@ main = do
     pure $ case s >>= readMaybe of
       Just n  -> n
       Nothing -> 20
-  limiter <- newRateLimiter
+  rateLimitPerUser <- do
+    s <- lookupEnv "RATE_LIMIT_PER_USER"
+    pure $ case s >>= readMaybe of
+      Just n  -> n
+      Nothing -> 10
+  ipLimiter   <- newRateLimiter
+  userLimiter <- newRateLimiter
 
   -- Serve
   putStrLn $ "haskelling: listening on port " <> show port
-  run port (app judge0Cfg limiter rateLimitPerIp pool authEnv)
+  run port (app judge0Cfg ipLimiter rateLimitPerIp userLimiter rateLimitPerUser pool authEnv)
