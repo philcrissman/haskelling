@@ -33,6 +33,7 @@ export interface SubmissionHistoryItem {
   passedCount: number;
   failedCount: number;
   createdAt: string;
+  code: string;
 }
 
 export interface SubmissionHistoryResponse {

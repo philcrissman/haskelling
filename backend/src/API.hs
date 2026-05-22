@@ -116,6 +116,7 @@ data SubmissionHistoryItem = SubmissionHistoryItem
   , histPassedCount :: Int
   , histFailedCount :: Int
   , histCreatedAt   :: UTCTime
+  , histCode        :: Text
   }
 
 instance ToJSON SubmissionHistoryItem where
@@ -126,6 +127,7 @@ instance ToJSON SubmissionHistoryItem where
     , "passedCount" .= histPassedCount h
     , "failedCount" .= histFailedCount h
     , "createdAt"   .= histCreatedAt h
+    , "code"        .= histCode h
     ]
 
 newtype SubmissionHistoryResponse = SubmissionHistoryResponse

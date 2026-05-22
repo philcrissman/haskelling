@@ -240,6 +240,7 @@ submissionHistoryHandler pool authEnv eid mAuth = do
       , histPassedCount = Schema.submissionPassedCount sub
       , histFailedCount = Schema.submissionFailedCount sub
       , histCreatedAt   = Schema.submissionCreatedAt sub
+      , histCode        = Schema.submissionCode sub
       }
 
 progressHandler :: AuthEnv -> ConnectionPool -> Maybe Text -> Handler ProgressResponse
