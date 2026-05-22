@@ -413,6 +413,26 @@ Make the app usable on a phone. At narrow viewports the sidebar collapses into a
 
 ---
 
+### FE-23: Restore last submission code on exercise load
+
+**Size:** S
+
+**Description:**
+When a user returns to an exercise and no `localStorage` entry exists (new device, different browser, cleared data), fetch their most recent submission from `GET /api/exercises/:id/submissions` and seed the editor with that code. Falls back to stub code if no prior submission exists.
+
+**Depends on:** BE-22 (add `code` field to submission history response)
+
+**Acceptance criteria:**
+- [ ] If `localStorage` has saved code for the exercise, it takes precedence (no change to current behaviour)
+- [ ] If no `localStorage` entry exists, `GET /api/exercises/:id/submissions` is called for the current exercise
+- [ ] If a prior submission exists, the editor is pre-populated with the most recent submission's code
+- [ ] If no prior submission exists, the editor falls back to the stub code
+- [ ] The fetch does not block rendering — the editor shows stub/localStorage immediately and updates on response
+- [ ] On successful restore, the code is written to `localStorage` so subsequent loads are instant
+- [ ] Falls back gracefully to stub code if the user is unauthenticated
+
+---
+
 ### FE-20: Accessibility
 
 **Size:** M
@@ -438,6 +458,8 @@ Implement stories in this sequence:
 1. FE-01 → FE-02 → FE-03 → FE-04 *(walking skeleton — core loop working)*
 2. FE-05 → FE-06 → FE-07 → FE-08 → FE-09 → FE-10 *(curriculum navigation complete)*
 3. FE-11 → FE-12 → FE-13 → FE-14 → FE-15 *(auth complete)*
-4. FE-16 → FE-17 → FE-18 → FE-19 → FE-20 *(polish complete)*
+4. FE-16 → FE-17 → FE-18 → FE-19 → FE-20 → FE-23 *(polish complete)*
+
+FE-23 depends on BE-22 (add `code` field to submission history response).
 
 FE-08 (progress indicators) depends on the backend Phase 3 auth being complete — implement the component in Phase 2 but the progress data will be placeholder until auth is wired up in Phase 3.

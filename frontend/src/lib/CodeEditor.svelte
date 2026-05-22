@@ -5,6 +5,7 @@
   import { EditorState, Prec } from '@codemirror/state';
   import { StreamLanguage } from '@codemirror/language';
   import { haskell } from '@codemirror/legacy-modes/mode/haskell';
+  import { oneDark } from '@codemirror/theme-one-dark';
 
   interface Props {
     value: string;
@@ -32,6 +33,7 @@
         doc: initialValue,
         extensions: [
           basicSetup,
+          oneDark,
           StreamLanguage.define(haskell),
           EditorState.tabSize.of(initialTabSize),
           EditorState.readOnly.of(initialReadOnly),

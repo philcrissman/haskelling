@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { clerk, initClerk, isSignedIn, openSignIn, signOut } from './lib/auth';
+  import { clerk, initClerk, isSignedIn, signOut } from './lib/auth';
   import Sidebar from './lib/Sidebar.svelte';
   import ExercisePage from './lib/ExercisePage.svelte';
   import { getExercises } from './api';
@@ -87,6 +87,10 @@
     signedIn = false;
     chapters = [];
   }
+
+  function handleSignIn() {
+    clerk.redirectToSignIn({ redirectUrl: window.location.href });
+  }
 </script>
 
 {#if !clerkReady}
@@ -97,7 +101,7 @@
     <div class="sign-in-card">
       <h1 class="brand">haskelling</h1>
       <p class="tagline">Learn Haskell by doing</p>
-      <button class="sign-in-btn" onclick={openSignIn}>
+      <button class="sign-in-btn" onclick={handleSignIn}>
         Sign in with GitHub
       </button>
     </div>

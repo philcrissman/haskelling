@@ -25,10 +25,6 @@ export async function getToken(): Promise<string | null> {
   return clerk.session.getToken();
 }
 
-export function openSignIn(): void {
-  clerk.openSignIn();
-}
-
 export async function signOut(): Promise<void> {
   await clerk.signOut();
 }

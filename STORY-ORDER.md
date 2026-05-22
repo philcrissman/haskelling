@@ -177,8 +177,10 @@ Each phase should be independently testable before starting the next.
 | FE-18 | Keyboard shortcuts (Cmd/Ctrl+Enter to submit) |
 | FE-19 | Mobile layout |
 | FE-20 | Accessibility (ARIA live regions, keyboard navigation, heading hierarchy) |
+| BE-22 | Add `code` field to submission history response |
+| FE-23 | Restore last submission code on exercise load (cross-device persistence via API; depends on BE-22) |
 
-**Phase complete when:** The app is usable on a phone, resilient to API errors, keyboard-navigable, and has no critical accessibility violations under axe-core.
+**Phase complete when:** The app is usable on a phone, resilient to API errors, keyboard-navigable, has no critical accessibility violations under axe-core, and user code is restored across devices.
 
 ---
 
@@ -212,9 +214,9 @@ Each phase should be independently testable before starting the next.
 | 7 — Backend data layer | 9 | BE-08–10, BE-15–18, BE-20–21 |
 | 8 — Frontend navigation | 7 | FE-05–10, FE-22 |
 | 9 — Auth | 9 | BE-11–14, FE-11–15 |
-| 10 — Polish | 5 | FE-16–20 |
+| 10 — Polish | 7 | FE-16–20, BE-22, FE-23 |
 | 11 — Production | 6 | INFRA-11–16 |
-| **Total** | **57** | |
+| **Total** | **59** | |
 
 ---
 

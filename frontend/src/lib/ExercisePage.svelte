@@ -21,12 +21,19 @@
   let historyLoading = $state(false);
   let historyVisible = $state(false);
 
+  const storageKey = $derived(`haskelling:code:${exercise.id}`);
+
   $effect.pre(() => {
-    code = exercise.stubCode;
+    const saved = localStorage.getItem(`haskelling:code:${exercise.id}`);
+    code = saved ?? exercise.stubCode;
     result = null;
     hintsRevealed = 0;
     history = [];
     historyVisible = false;
+  });
+
+  $effect(() => {
+    localStorage.setItem(storageKey, code);
   });
 
   async function handleSubmit() {
