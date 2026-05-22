@@ -3,6 +3,7 @@
 
   interface Props {
     chapters: Chapter[];
+    loading?: boolean;
     currentId: string;
     onSelect: (id: string) => void;
     avatarUrl: string | null;
@@ -10,7 +11,7 @@
     onSignOut: () => void;
   }
 
-  const { chapters, currentId, onSelect, avatarUrl, displayName, onSignOut }: Props = $props();
+  const { chapters, loading = false, currentId, onSelect, avatarUrl, displayName, onSignOut }: Props = $props();
 </script>
 
 <nav class="sidebar">
@@ -20,25 +21,38 @@
   </div>
 
   <div class="chapter-list">
-  {#each chapters as chapter}
-    <section class="chapter-section">
-      <h2 class="chapter-heading">{chapter.title}</h2>
-      <ul class="exercise-list">
-        {#each chapter.exercises as exercise}
-          <li>
-            <a
-              href="#{`/exercises/${exercise.id}`}"
-              class="exercise-link"
-              class:active={exercise.id === currentId}
-              onclick={(e) => { e.preventDefault(); onSelect(exercise.id); }}
-            >
-              {exercise.title}
-            </a>
-          </li>
-        {/each}
-      </ul>
-    </section>
-  {/each}
+  {#if loading}
+    {#each [4, 5, 3, 4] as count}
+      <section class="chapter-section">
+        <div class="skeleton skeleton--heading"></div>
+        <ul class="exercise-list">
+          {#each Array(count) as _}
+            <li><div class="skeleton skeleton--item"></div></li>
+          {/each}
+        </ul>
+      </section>
+    {/each}
+  {:else}
+    {#each chapters as chapter}
+      <section class="chapter-section">
+        <h2 class="chapter-heading">{chapter.title}</h2>
+        <ul class="exercise-list">
+          {#each chapter.exercises as exercise}
+            <li>
+              <a
+                href="#{`/exercises/${exercise.id}`}"
+                class="exercise-link"
+                class:active={exercise.id === currentId}
+                onclick={(e) => { e.preventDefault(); onSelect(exercise.id); }}
+              >
+                {exercise.title}
+              </a>
+            </li>
+          {/each}
+        </ul>
+      </section>
+    {/each}
+  {/if}
   </div>
 
   <div class="user-footer">
@@ -90,6 +104,37 @@
     font-size: 0.72rem;
     color: #888;
     margin-top: 0.1rem;
+  }
+
+  .skeleton {
+    background: linear-gradient(90deg, #ebebeb 25%, #f5f5f5 50%, #ebebeb 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite;
+    border-radius: 3px;
+  }
+
+  .skeleton--heading {
+    height: 0.6rem;
+    width: 55%;
+    margin: 0.6rem 1rem 0.4rem;
+  }
+
+  .skeleton--item {
+    height: 0.75rem;
+    width: 75%;
+    margin: 0.45rem 1.25rem;
+  }
+
+  @keyframes shimmer {
+    from { background-position: 200% 0; }
+    to   { background-position: -200% 0; }
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .skeleton {
+      background: linear-gradient(90deg, #2a2a2a 25%, #333 50%, #2a2a2a 75%);
+      background-size: 200% 100%;
+    }
   }
 
   .chapter-section {

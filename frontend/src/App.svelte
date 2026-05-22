@@ -94,7 +94,7 @@
 </script>
 
 {#if !clerkReady}
-  <div class="app-state">Loading…</div>
+  <div class="app-state"><span class="spinner"></span></div>
 
 {:else if !signedIn}
   <div class="sign-in-bg">
@@ -107,17 +107,12 @@
     </div>
   </div>
 
-{:else if loading}
-  <div class="app-state">Loading…</div>
-
-{:else if fetchError}
-  <div class="app-state app-state--error">{fetchError}</div>
-
 {:else}
   <div class="app-layout">
     <aside class="sidebar-container">
       <Sidebar
         {chapters}
+        loading={loading}
         currentId={currentId ?? ''}
         onSelect={navigate}
         avatarUrl={userAvatarUrl}
@@ -126,7 +121,11 @@
       />
     </aside>
     <main class="main-content">
-      {#if currentExercise}
+      {#if loading}
+        <div class="app-state"><span class="spinner"></span></div>
+      {:else if fetchError}
+        <div class="app-state app-state--error">{fetchError}</div>
+      {:else if currentExercise}
         <ExercisePage exercise={currentExercise} lesson={currentLesson} />
       {:else}
         <div class="app-state">Select an exercise to get started.</div>
@@ -172,6 +171,20 @@
   }
 
   .app-state--error { color: #dc2626; }
+
+  .spinner {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    border: 2px solid #e5e5e5;
+    border-top-color: #6d28d9;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
 
   /* Sign-in screen */
 
