@@ -74,25 +74,23 @@ ExerciseClient {
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | POST | `/api/submissions` | Required | Submit code for evaluation |
-| GET | `/api/submissions?exercise_id=:id` | Required | Submission history for an exercise |
+| GET | `/api/exercises/:id/submissions` | Required | Submission history for an exercise |
 
 **POST /api/submissions request:**
 ```
 {
-  exercise_id : String,   -- must match a known exercise id
-  code        : String    -- max 50KB; user-submitted Haskell
+  exerciseId : String,   -- must match a known exercise id
+  code       : String    -- max 50KB; user-submitted Haskell
 }
 ```
 
 **POST /api/submissions response:**
 ```
 {
-  submission_id : String (UUID),
-  status        : "pass" | "fail" | "compile_error" | "timeout" | "runtime_error" | "error",
-  output        : String,   -- sanitized stdout/stderr from test runner; hints stripped if present
-  passed_count  : Int,
-  failed_count  : Int,
-  evaluated_at  : ISO8601 timestamp
+  status      : "pass" | "fail" | "compile_error" | "timeout" | "runtime_error" | "error",
+  output      : String,   -- sanitized stdout/stderr from test runner; hints stripped if present
+  passedCount : Int,
+  failedCount : Int
 }
 ```
 
@@ -105,11 +103,12 @@ ExerciseClient {
 **GET /api/progress response:**
 ```
 {
-  exercises: [
+  progress: [
     {
-      exercise_id     : String,
+      exerciseId      : String,
       status          : "not_started" | "attempted" | "passed",
-      last_submitted_at: ISO8601 | null
+      firstPassedAt   : ISO8601 | null,
+      lastSubmittedAt : ISO8601 | null
     }
   ]
 }

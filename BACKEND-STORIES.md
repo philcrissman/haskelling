@@ -30,11 +30,13 @@ The backend exposes no `/auth/*` redirect endpoints. Clerk owns the OAuth flow e
 |--------|------|------|------------|-------------|
 | GET | `/health` | None | — | Health check |
 | GET | `/api/me` | Required | — | Current user profile |
-| GET | `/api/exercises` | Required | — | All exercises grouped by chapter |
-| GET | `/api/exercises/:id` | Required | — | Single exercise |
-| POST | `/api/submissions` | Required | 10/min per user, 20/min per IP | Submit code for evaluation |
-| GET | `/api/submissions` | Required | — | Submission history for an exercise |
+| GET | `/api/exercises` | None | — | All exercises grouped by chapter |
+| GET | `/api/exercises/:id` | None | — | Single exercise |
+| POST | `/api/submissions` | Required | 20/min per IP (per-user in Phase 10) | Submit code for evaluation |
+| GET | `/api/exercises/:id/submissions` | Required | — | Submission history for an exercise |
 | GET | `/api/progress` | Required | — | User's progress across all exercises |
+
+**Note on exercise endpoint auth:** `GET /api/exercises` and `GET /api/exercises/:id` require no auth token. Exercise content is public learning material; the sensitive fields (`hiddenTests`, `canonicalSolution`) are stripped at the type level and never reach the wire regardless of auth state. Frontend routing enforces sign-in before any exercise is rendered; the backend does not duplicate that gate.
 
 ---
 
@@ -83,6 +85,7 @@ Returns all exercises grouped by chapter, in display order. Strips `hiddenTests`
       "slug":        string,
       "title":       string,
       "description": string,
+      "lesson":      string,   // markdown content for the chapter
       "exercises": [
         {
           "id":               string,
@@ -101,11 +104,7 @@ Returns all exercises grouped by chapter, in display order. Strips `hiddenTests`
 
 Chapters are ordered by `orderNum`. Exercises within each chapter are ordered by `orderInChapter`.
 
-**Errors:**
-
-| Code | Condition |
-|------|-----------|
-| 401 | Missing or invalid JWT |
+No auth required.
 
 ---
 
@@ -128,11 +127,12 @@ Returns a single exercise by slug. Same shape as a single exercise object from t
 }
 ```
 
+No auth required.
+
 **Errors:**
 
 | Code | Condition |
 |------|-----------|
-| 401 | Missing or invalid JWT |
 | 404 | No exercise with that slug |
 
 ---
@@ -152,13 +152,10 @@ Submits user code for an exercise. Calls Judge0 synchronously and waits for the 
 **Response 200:**
 ```
 {
-  "id":          number,
-  "exerciseId":  string,
   "status":      "pass" | "fail" | "compile_error" | "timeout" | "runtime_error" | "error",
   "output":      string,
   "passedCount": number,
-  "failedCount": number,
-  "evaluatedAt": string   // ISO 8601 timestamp
+  "failedCount": number
 }
 ```
 
@@ -177,11 +174,11 @@ Submits user code for an exercise. Calls Judge0 synchronously and waits for the 
 
 ---
 
-### GET /api/submissions
+### GET /api/exercises/:id/submissions
 
 Returns submission history for the authenticated user on a specific exercise, newest first.
 
-**Query parameter:** `exercise_id` (required) — exercise slug
+**Path parameter:** `id` — exercise slug
 
 **Response 200:**
 ```
@@ -189,12 +186,11 @@ Returns submission history for the authenticated user on a specific exercise, ne
   "submissions": [
     {
       "id":          number,
-      "exerciseId":  string,
       "status":      "pass" | "fail" | "compile_error" | "timeout" | "runtime_error" | "error",
       "output":      string,
       "passedCount": number,
       "failedCount": number,
-      "evaluatedAt": string
+      "createdAt":   string   // ISO 8601 timestamp
     }
   ]
 }
@@ -206,9 +202,8 @@ Note: `code` is not returned in history responses. Users see their current edito
 
 | Code | Condition |
 |------|-----------|
-| 400 | Missing `exercise_id` |
 | 401 | Missing or invalid JWT |
-| 404 | Unknown exercise_id |
+| 404 | Unknown exercise slug |
 
 ---
 
@@ -567,11 +562,67 @@ Add structured request logging to all endpoints. Log method, path, status code, 
 
 ---
 
+### BE-19: `GET /api/me` endpoint
+
+**Size:** S
+
+**Description:**
+Return the authenticated user's profile. If no User row exists for the Clerk ID (first call after sign-in), upsert one before responding.
+
+**Acceptance criteria:**
+- [ ] `GET /api/me` with a valid JWT returns `{ id, username, avatarUrl, email }`
+- [ ] `id` is the database primary key (Int64)
+- [ ] `avatarUrl` and `email` are `null` if absent on the Clerk user record
+- [ ] Missing or invalid JWT returns 401
+
+---
+
+### BE-20: Add `lesson` column to Chapter
+
+**Size:** S
+
+**Description:**
+Add a `lesson` column (TEXT NOT NULL) to the `chapter` table. Seed it from `curriculum/lessons/<slug>.md` at startup alongside other chapter data.
+
+**Acceptance criteria:**
+- [ ] `migrateAll` adds the `lesson` column to `chapter`
+- [ ] Seeding reads `curriculum/lessons/<slug>.md` for each chapter and populates the column
+- [ ] If a lesson file is missing, the server fails fast at startup with a clear error naming the missing file
+
+---
+
+### BE-21: Include `lesson` field in chapter API response
+
+**Size:** S
+
+**Description:**
+Include the `lesson` field (markdown string) in each chapter object returned by `GET /api/exercises`.
+
+**Acceptance criteria:**
+- [ ] Each chapter object in `GET /api/exercises` includes `"lesson": string`
+- [ ] The content matches what was seeded from `curriculum/lessons/<slug>.md`
+
+---
+
+### BE-22: Add `code` field to submission history response
+
+**Size:** S
+
+**Description:**
+Include the submitted code in submission history items so the frontend can restore a user's last submission across devices.
+
+**Acceptance criteria:**
+- [ ] Each item in `GET /api/exercises/:id/submissions` includes `"code": string`
+- [ ] The field contains the code that was submitted, unchanged
+
+---
+
 ## Execution Order
 
 Implement stories in this sequence; each phase should be independently testable before starting the next:
 
 1. BE-01 → BE-02 → BE-03 → BE-04 → BE-05 *(walking skeleton complete)*
 2. BE-06 → BE-07 → BE-08 → BE-09 → BE-10 *(data layer complete)*
-3. BE-11 → BE-12 → BE-13 → BE-14 *(auth complete)*
-4. BE-15 → BE-16 → BE-17 → BE-18 *(progress and curriculum API complete)*
+3. BE-11 → BE-12 → BE-13 *(auth complete)*
+4. BE-15 → BE-16 → BE-17 → BE-18 → BE-19 → BE-20 → BE-21 *(progress, curriculum API, and me endpoint complete)*
+5. BE-14 → BE-22 *(Phase 10: per-user rate limiting, cross-device code restore)*

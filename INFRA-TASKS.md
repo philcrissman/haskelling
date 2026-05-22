@@ -43,7 +43,7 @@ Document and provide templates for all environment variables required by the bac
 - [ ] A `backend/.env.example` file lists every required backend variable with a comment explaining each
 - [ ] A `frontend/.env.example` file lists every required frontend variable
 - [ ] Both `.env.local` files are in `.gitignore`
-- [ ] Required backend variables: `DATABASE_URL`, `PORT`, `JUDGE0_API_KEY`, `JUDGE0_API_URL`, `JUDGE0_MOCK`, `CLERK_JWKS_URL`, `RATE_LIMIT_PER_IP`, `RATE_LIMIT_PER_USER`
+- [ ] Required backend variables: `DATABASE_URL`, `PORT`, `JUDGE0_API_KEY`, `JUDGE0_API_URL`, `JUDGE0_MOCK`, `CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, `RATE_LIMIT_PER_IP`
 - [ ] Required frontend variables: `VITE_CLERK_PUBLISHABLE_KEY`, `VITE_API_BASE_URL`
 - [ ] The server fails fast with a clear message naming the missing variable if any required variable is absent
 
@@ -252,6 +252,23 @@ Surface elevated backend error rates (5xx responses) so issues are caught before
 - [ ] A Fly.io alert is configured to notify the maintainer if the 5xx error rate exceeds 5% over a 10-minute window
 - [ ] The `GET /health` endpoint returns 200 only when the database connection is healthy — a DB outage causes health check failure, triggering the Fly.io restart policy
 - [ ] Request logging from BE-18 (structured log lines with status code) feeds into Fly.io's log viewer for manual inspection
+
+---
+
+### INFRA-17: Create database indexes
+
+**Description:**
+The indexes specified in DATA-MODEL.md were never applied. `migrateAll` only manages table schema — manual indexes must be run separately. Apply all five indexes from DATA-MODEL.md to the staging and production databases.
+
+**Acceptance criteria:**
+- [ ] All five indexes from DATA-MODEL.md exist in the database:
+  - `idx_submission_user_exercise` on `submission(user_id, exercise_id)`
+  - `idx_submission_user_created` on `submission(user_id, created_at DESC)`
+  - `idx_user_progress_user` on `user_progress(user_id)`
+  - `idx_exercise_chapter_order` on `exercise(chapter_id, order_in_chapter)`
+  - `idx_chapter_order` on `chapter(order_num)`
+- [ ] Indexes are idempotent (`CREATE INDEX IF NOT EXISTS`) so they can be re-run safely
+- [ ] A migration SQL file or startup hook applies the indexes so future environments get them automatically
 
 ---
 

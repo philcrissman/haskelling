@@ -204,7 +204,7 @@ Replace the hardcoded exercise data with a `GET /api/exercises/:id` call. Popula
 **Acceptance criteria:**
 - [ ] The editor is populated with `stubCode` when an exercise loads
 - [ ] Navigating to a different exercise resets the editor to the new stub code
-- [ ] The user's edits are not lost when switching away and back to the same exercise within the session (store per-exercise editor state in memory)
+- [ ] The user's edits are not lost when switching away and back to the same exercise (per-exercise editor state persisted in `localStorage`)
 - [ ] A 404 response from the API renders the 404 page
 - [ ] The exercise title and learning objective update when navigating
 
@@ -272,12 +272,12 @@ Add a collapsible panel below the result display showing the last N submissions 
 **Size:** M
 
 **Description:**
-Install and configure the Clerk React SDK. Wrap the app in `<ClerkProvider>`. The Clerk publishable key is read from an environment variable (`VITE_CLERK_PUBLISHABLE_KEY`). Verify Clerk initialises without errors.
+Install and configure the Clerk vanilla JS SDK (`@clerk/clerk-js`). Load and initialise Clerk with the publishable key from `VITE_CLERK_PUBLISHABLE_KEY`. Verify Clerk initialises without errors.
 
 **Acceptance criteria:**
 - [ ] `VITE_CLERK_PUBLISHABLE_KEY` is read from `.env.local` (not committed to git)
 - [ ] The app boots without errors with Clerk configured
-- [ ] `useAuth()` and `useUser()` hooks are available in components
+- [ ] `clerk.session` and `redirectToSignIn()` are available for auth checks
 - [ ] A `.env.example` file documents all required environment variables
 
 ---

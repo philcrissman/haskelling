@@ -136,7 +136,7 @@ Each phase should be independently testable before starting the next.
 | FE-10 | Submission history panel |
 | FE-22 | Lesson panel per chapter — render `lesson` markdown above exercise list; requires a markdown renderer (e.g. `marked`) |
 
-**Note (FE-08):** Progress data requires auth (Phase 9). In this phase, mock the `GET /api/progress` response locally or render the component with placeholder/empty state. Wire to the real endpoint in Phase 9.
+**Note (FE-08):** Progress data is user-scoped via the real `GET /api/progress` endpoint (wired in Phase 9).
 
 **Phase complete when:** A user can navigate between all 30 exercises by URL and sidebar, see their stub code, submit, and see results and history — all without auth.
 
@@ -151,7 +151,6 @@ Each phase should be independently testable before starting the next.
 | BE-11 | Clerk JWT validation middleware |
 | BE-12 | User record creation on first login |
 | BE-13 | Link submissions to users |
-| BE-14 | Per-user rate limiting on submissions |
 | FE-11 | Clerk provider setup |
 | FE-12 | Auth-gated routing |
 | FE-13 | Sign-in page (GitHub OAuth via Clerk) |
@@ -162,7 +161,7 @@ Each phase should be independently testable before starting the next.
 1. FE-11 (Clerk provider) + BE-11 (JWT validation) — prove the token round-trip first
 2. BE-12, FE-12, FE-13, FE-14 — wire auth end-to-end
 3. BE-13 — link existing submissions to users
-4. BE-14, FE-15 — rate limit + sign-out polish
+4. FE-15 — sign-out polish
 
 **Phase complete when:** Unauthenticated users are redirected to sign-in, GitHub OAuth completes successfully, all API calls include the Clerk JWT, and progress data is user-scoped.
 
@@ -172,6 +171,7 @@ Each phase should be independently testable before starting the next.
 
 | ID | Story |
 |----|-------|
+| BE-14 | Per-user rate limiting on submissions (replaces per-IP-only limiting) |
 | FE-16 | Loading states |
 | FE-17 | Error states (network failures, 429, 502/504) |
 | FE-18 | Keyboard shortcuts (Cmd/Ctrl+Enter to submit) |

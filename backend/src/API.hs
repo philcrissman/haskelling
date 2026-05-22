@@ -17,6 +17,23 @@ newtype HealthResponse = HealthResponse {status :: Text}
 instance ToJSON HealthResponse where
   toJSON r = object ["status" .= status r]
 
+-- Me
+
+data MeResponse = MeResponse
+  { meId        :: Int64
+  , meUsername  :: Text
+  , meAvatarUrl :: Maybe Text
+  , meEmail     :: Maybe Text
+  }
+
+instance ToJSON MeResponse where
+  toJSON r = object
+    [ "id"        .= meId r
+    , "username"  .= meUsername r
+    , "avatarUrl" .= meAvatarUrl r
+    , "email"     .= meEmail r
+    ]
+
 -- Exercises (client-facing schema — hiddenTests and canonicalSolution never included)
 
 data ExerciseClient = ExerciseClient
@@ -123,7 +140,7 @@ data ProgressItem = ProgressItem
   { progressExerciseId     :: Text
   , progressStatus         :: Text
   , progressFirstPassedAt  :: Maybe UTCTime
-  , progressLastSubmitted  :: UTCTime
+  , progressLastSubmitted  :: Maybe UTCTime
   }
 
 instance ToJSON ProgressItem where
@@ -154,6 +171,11 @@ statusToText StatusError        = "error"
 
 type HealthAPI = "health" :> Get '[JSON] HealthResponse
 
+type MeAPI =
+  "api" :> "me"
+    :> Header "Authorization" Text
+    :> Get '[JSON] MeResponse
+
 type ExercisesAPI =
        "api" :> "exercises" :> Get '[JSON] ExercisesListResponse
   :<|> "api" :> "exercises" :> Capture "id" Text :> Get '[JSON] ExerciseClient
@@ -176,6 +198,7 @@ type ProgressAPI =
 
 type API =
        HealthAPI
+  :<|> MeAPI
   :<|> ExercisesAPI
   :<|> SubmissionsAPI
   :<|> SubmissionHistoryAPI

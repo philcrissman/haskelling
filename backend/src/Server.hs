@@ -10,21 +10,20 @@ import API
 import Auth (AuthEnv)
 import Auth qualified
 import Control.Concurrent.STM
-import Control.Monad (forM)
+import Control.Exception (SomeException, try)
 import Control.Monad.IO.Class (liftIO)
 import Data.Aeson (encode, object, (.=))
 import Data.ByteString.Char8 qualified as BC8
 import Data.List (sortBy)
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
-import Data.Maybe (catMaybes)
 import Data.Ord (comparing)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Time (UTCTime, diffUTCTime, getCurrentTime)
 import Database.Persist (Entity (..), SelectOpt (..), get, getBy, insert, insert_, selectList, update, (==.), (=.))
 import Database.Persist.Postgresql (ConnectionPool, runSqlPool)
-import Database.Persist.Sql (SqlPersistT, fromSqlKey)
+import Database.Persist.Sql (SqlPersistT, fromSqlKey, rawExecute)
 import Judge0 (Judge0Config (..), SubmissionResult (..), submitAndWait)
 import Network.HTTP.Types (statusCode, status429)
 import Network.Socket (SockAddr (..), hostAddressToTuple)
@@ -125,8 +124,25 @@ toChapterResponse (Entity _ ch) exs = ChapterResponse
 
 -- Handlers
 
-healthHandler :: Handler HealthResponse
-healthHandler = return $ HealthResponse { status = "ok" }
+healthHandler :: ConnectionPool -> Handler HealthResponse
+healthHandler pool = do
+  result <- liftIO $ (try (runSqlPool (rawExecute "SELECT 1" []) pool) :: IO (Either SomeException ()))
+  case result of
+    Left _  -> jsonError err503 "database unreachable" "db_error"
+    Right _ -> pure $ HealthResponse { status = "ok" }
+
+meHandler :: AuthEnv -> ConnectionPool -> Maybe Text -> Handler MeResponse
+meHandler authEnv pool mAuth = do
+  userId <- requireUser authEnv pool mAuth
+  mUser  <- liftIO $ runSqlPool (get userId) pool
+  case mUser of
+    Nothing   -> jsonError err500 "user not found" "internal_error"
+    Just user -> pure MeResponse
+      { meId        = fromSqlKey userId
+      , meUsername  = Schema.userUsername user
+      , meAvatarUrl = Schema.userAvatarUrl user
+      , meEmail     = Schema.userEmail user
+      }
 
 exercisesListHandler :: ConnectionPool -> Handler ExercisesListResponse
 exercisesListHandler pool = do
@@ -167,17 +183,19 @@ submitHandler cfg pool authEnv mAuth req = do
         Just (Entity key exVal) -> pure (key, Schema.exerciseHiddenTests exVal)
       result <- liftIO $ submitAndWait cfg eid code hiddenTests
       now    <- liftIO getCurrentTime
-      liftIO $ runSqlPool (insert_ Schema.Submission
-        { Schema.submissionUserId      = Just userId
-        , Schema.submissionExerciseId  = exerciseKey
-        , Schema.submissionCode        = code
-        , Schema.submissionStatus      = srStatus result
-        , Schema.submissionOutput      = srOutput result
-        , Schema.submissionPassedCount = srPassedCount result
-        , Schema.submissionFailedCount = srFailedCount result
-        , Schema.submissionCreatedAt   = now
-        }) pool
-      liftIO $ runSqlPool (upsertProgress userId exerciseKey (srStatus result) now) pool
+      liftIO $ runSqlPool (do
+        insert_ Schema.Submission
+          { Schema.submissionUserId      = Just userId
+          , Schema.submissionExerciseId  = exerciseKey
+          , Schema.submissionCode        = code
+          , Schema.submissionStatus      = srStatus result
+          , Schema.submissionOutput      = srOutput result
+          , Schema.submissionPassedCount = srPassedCount result
+          , Schema.submissionFailedCount = srFailedCount result
+          , Schema.submissionCreatedAt   = now
+          }
+        upsertProgress userId exerciseKey (srStatus result) now
+        ) pool
       pure SubmitResponse
         { submitStatus      = statusToText (srStatus result)
         , submitOutput      = srOutput result
@@ -213,20 +231,37 @@ submissionHistoryHandler pool authEnv eid mAuth = do
 progressHandler :: AuthEnv -> ConnectionPool -> Maybe Text -> Handler ProgressResponse
 progressHandler authEnv pool mAuth = do
   userId    <- requireUser authEnv pool mAuth
+  chapters  <- liftIO $ runSqlPool (selectList [] [Asc Schema.ChapterOrderNum]) pool
+  exercises <- liftIO $ runSqlPool (selectList [] []) pool
   progresses <- liftIO $ runSqlPool
     (selectList [Schema.UserProgressUserId ==. userId] [])
     pool
-  items <- liftIO $ forM progresses $ \(Entity _ up) -> do
-    mEx <- runSqlPool (get (Schema.userProgressExerciseId up)) pool
-    pure $ case mEx of
-      Nothing -> Nothing
-      Just ex -> Just ProgressItem
-        { progressExerciseId    = Schema.exerciseSlug ex
-        , progressStatus        = progressStatusToText (Schema.userProgressStatus up)
-        , progressFirstPassedAt = Schema.userProgressFirstPassedAt up
-        , progressLastSubmitted = Schema.userProgressLastSubmittedAt up
-        }
-  pure $ ProgressResponse { progressItems = catMaybes items }
+  let chapOrder = Map.fromList
+        [(entityKey c, i) | (c, i) <- zip chapters [0 :: Int ..]]
+      progMap = Map.fromList
+        [(Schema.userProgressExerciseId (entityVal p), entityVal p) | p <- progresses]
+      orderedExs = sortBy
+        (\(Entity _ a) (Entity _ b) ->
+          let ci = Map.findWithDefault 0 (Schema.exerciseChapterId a) chapOrder
+              cj = Map.findWithDefault 0 (Schema.exerciseChapterId b) chapOrder
+          in compare ci cj <> compare (Schema.exerciseOrderInChapter a) (Schema.exerciseOrderInChapter b))
+        exercises
+  pure $ ProgressResponse { progressItems = map (toItem progMap) orderedExs }
+  where
+    toItem progMap (Entity exKey ex) =
+      case Map.lookup exKey progMap of
+        Just up -> ProgressItem
+          { progressExerciseId    = Schema.exerciseSlug ex
+          , progressStatus        = progressStatusToText (Schema.userProgressStatus up)
+          , progressFirstPassedAt = Schema.userProgressFirstPassedAt up
+          , progressLastSubmitted = Just (Schema.userProgressLastSubmittedAt up)
+          }
+        Nothing -> ProgressItem
+          { progressExerciseId    = Schema.exerciseSlug ex
+          , progressStatus        = "not_started"
+          , progressFirstPassedAt = Nothing
+          , progressLastSubmitted = Nothing
+          }
 
 -- Upsert user progress after a submission
 
@@ -266,7 +301,8 @@ progressStatusToText Schema.Passed     = "passed"
 
 server :: Judge0Config -> ConnectionPool -> AuthEnv -> Server API
 server cfg pool authEnv =
-  healthHandler
+  healthHandler pool
+    :<|> meHandler authEnv pool
     :<|> (exercisesListHandler pool :<|> exerciseByIdHandler pool)
     :<|> submitHandler cfg pool authEnv
     :<|> submissionHistoryHandler pool authEnv

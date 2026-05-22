@@ -2,7 +2,7 @@
 
 A Rustlings/koans-style web app for learning Haskell. Complete exercises in your browser; a hidden test suite checks your solution and tells you pass or fail.
 
-**Status:** Under active development. Not yet deployed.
+**Status:** Under active development. Backend deployed to Fly.io staging.
 
 ---
 
@@ -38,7 +38,7 @@ docker compose up -d
 # 3. Configure backend environment
 cp backend/.env.example backend/.env.local
 # Edit backend/.env.local — JUDGE0_MOCK=true is already set for local dev.
-# Fill in CLERK_JWKS_URL when you have a Clerk account.
+# Fill in CLERK_PUBLISHABLE_KEY and CLERK_SECRET_KEY when you have a Clerk account.
 
 # 4. Configure frontend environment
 cp frontend/.env.example frontend/.env.local

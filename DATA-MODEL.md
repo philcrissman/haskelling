@@ -98,7 +98,7 @@ Exercise
   deriving Show Eq
 
 Submission
-  userId        UserId
+  userId        UserId Maybe    -- nullable; set to Nothing for anonymous submissions
   exerciseId    ExerciseId
   code          Text
   status        SubmissionStatus
@@ -205,7 +205,7 @@ CREATE TABLE "exercise" (
 
 CREATE TABLE "submission" (
   "id"           BIGSERIAL PRIMARY KEY,
-  "user_id"      BIGINT NOT NULL REFERENCES "user"("id"),
+  "user_id"      BIGINT REFERENCES "user"("id"),
   "exercise_id"  BIGINT NOT NULL REFERENCES "exercise"("id"),
   "code"         TEXT   NOT NULL,
   "status"       TEXT   NOT NULL,
@@ -252,7 +252,7 @@ CREATE INDEX idx_chapter_order
   ON chapter(order_num);
 ```
 
-The `UniqueGithubId`, `UniqueChapterSlug`, `UniqueExerciseSlug`, and `UniqueUserExercise` constraints each imply an index; no additional index is needed for those columns.
+The `UniqueClerkId`, `UniqueChapterSlug`, `UniqueExerciseSlug`, and `UniqueUserExercise` constraints each imply an index; no additional index is needed for those columns.
 
 ---
 
