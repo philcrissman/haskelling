@@ -30,7 +30,21 @@
     hintsRevealed = 0;
     history = [];
     historyVisible = false;
+    if (!saved) restoreFromHistory(exercise.id, exercise.stubCode);
   });
+
+  async function restoreFromHistory(exerciseId: string, stubCode: string) {
+    try {
+      const resp = await getHistory(exerciseId);
+      const latest = resp.submissions[0];
+      if (latest && exercise.id === exerciseId && code === stubCode) {
+        code = latest.code;
+        localStorage.setItem(`haskelling:code:${exerciseId}`, latest.code);
+      }
+    } catch {
+      // unauthenticated or no history — fall back to stub silently
+    }
+  }
 
   $effect(() => {
     localStorage.setItem(storageKey, code);
