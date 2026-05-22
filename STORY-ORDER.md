@@ -172,32 +172,38 @@ Each phase should be independently testable before starting the next.
 | ID | Story |
 |----|-------|
 | BE-14 | Per-user rate limiting on submissions (replaces per-IP-only limiting) |
+| BE-19b | Return 502/504 for Judge0 network failures (typed error model in Judge0.hs) |
 | FE-16 | Loading states |
 | FE-17 | Error states (network failures, 429, 502/504) |
 | FE-18 | Keyboard shortcuts (Cmd/Ctrl+Enter to submit) |
 | FE-19 | Mobile layout |
 | FE-20 | Accessibility (ARIA live regions, keyboard navigation, heading hierarchy) |
+| FE-21 | Visual design and layout polish (typography, colour palette, component styling) |
 | BE-22 | Add `code` field to submission history response |
 | FE-23 | Restore last submission code on exercise load (cross-device persistence via API; depends on BE-22) |
 
-**Phase complete when:** The app is usable on a phone, resilient to API errors, keyboard-navigable, has no critical accessibility violations under axe-core, and user code is restored across devices.
+**Phase complete when:** The app is usable on a phone, resilient to API errors, keyboard-navigable, has no critical accessibility violations under axe-core, user code is restored across devices, and the visual design is polished.
 
 ---
 
-## Phase 11 — CI, Staging, Production Deployment
+## Phase 11 — Production Launch
 
-*Set up production and long-term monitoring. The app is MVP-ready after this phase.*
+*The current Fly.io deployment is production (no separate staging instance). This phase hardens it for public use.*
 
 | ID | Story |
 |----|-------|
-| INFRA-11 | Fly.io production app setup |
-| INFRA-12 | Frontend production deployment (Vercel/Netlify) |
+| INFRA-07 | GitHub Actions: auto-deploy to production on merge to main |
+| INFRA-17 | Create database indexes |
+| INFRA-18 | Custom GitHub OAuth App — Clerk branding (shows "Haskelling" on OAuth consent screen) |
+| INFRA-19 | Switch to Clerk production instance |
+| INFRA-20 | Custom domain: DNS setup + Fly.io cert + Clerk redirect URIs |
+| INFRA-21 | Pre-launch checklist: favicon, meta tags, robots.txt, 404 page |
 | INFRA-13 | Secrets management documentation |
 | INFRA-14 | Uptime monitoring (UptimeRobot or equivalent) |
 | INFRA-15 | Judge0 usage tracking |
-| INFRA-16 | Application error rate alerting |
+| INFRA-16 | Application error rate alerting (Fly.io metrics) |
 
-**Phase complete when:** The production app is live, monitored, and a deployment procedure for future releases is documented.
+**Phase complete when:** The app is live at its own domain, the OAuth consent screen shows the correct app name, CI deploys on merge, and basic uptime monitoring is in place.
 
 ---
 

@@ -272,17 +272,93 @@ The indexes specified in DATA-MODEL.md were never applied. `migrateAll` only man
 
 ---
 
+### INFRA-18: Custom GitHub OAuth App — Clerk branding
+
+**Description:**
+By default Clerk uses its own GitHub OAuth App, so the GitHub consent screen says "Clerk is requesting access." This story replaces that with a custom OAuth App registered under the project owner's GitHub account so the screen reads "Haskelling is requesting access."
+
+**Steps:**
+1. GitHub → Settings → Developer settings → OAuth Apps → New OAuth App
+   - Application name: Haskelling
+   - Homepage URL: production URL (e.g. `https://haskelling.fly.dev` or your custom domain)
+   - Authorization callback URL: copy from Clerk dashboard → Configure → Social connections → GitHub → "Use custom credentials" → "Authorized redirect URI"
+2. Register the app, then click "Generate a new client secret"
+3. Clerk dashboard → Configure → Social connections → GitHub → Use custom credentials
+4. Enter the Client ID and Client Secret from step 2 → Save
+5. Sign out and back in to verify the consent screen shows the correct app name
+
+**Acceptance criteria:**
+- [ ] The GitHub OAuth consent screen reads "Haskelling is requesting access to your account"
+- [ ] Sign-in and sign-out still work correctly after the change
+- [ ] The custom OAuth App credentials are stored in Clerk, not in `.env` files
+
+---
+
+### INFRA-19: Switch to Clerk production instance
+
+**Description:**
+Clerk development instances have rate limits, show a "Development mode" banner, and use `*.clerk.accounts.dev` URLs. Before public launch, create a Clerk production instance and update all keys.
+
+**Acceptance criteria:**
+- [ ] A Clerk production instance is created in the Clerk dashboard
+- [ ] GitHub OAuth custom credentials (from INFRA-18) are configured on the production instance
+- [ ] `CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY` on Fly.io are updated to production values
+- [ ] `VITE_CLERK_PUBLISHABLE_KEY` in the frontend build is updated to the production key
+- [ ] The "Development mode" banner no longer appears
+- [ ] Sign-in and sign-out still work correctly
+- [ ] Old development instance keys are rotated/deleted
+
+---
+
+### INFRA-20: Custom domain: DNS + Fly.io + Clerk
+
+**Description:**
+Point a registered domain at the Fly.io app and update Clerk's allowed origins so auth continues to work.
+
+**Steps:**
+1. Register a domain (e.g. `haskelling.dev` or similar)
+2. `flyctl certs add yourdomain.com` — Fly.io auto-provisions a TLS certificate (Let's Encrypt)
+3. In your DNS registrar: add a `CNAME` record pointing `yourdomain.com` to `haskelling.fly.dev` (or an `A` record using the Fly.io anycast IP — `flyctl ips list`)
+4. In Clerk dashboard → Domains: add the new domain to allowed origins
+5. Update `VITE_API_BASE_URL` and Clerk redirect URIs to use the new domain
+6. Verify: app loads at the new domain, OAuth flow completes correctly
+
+**Acceptance criteria:**
+- [ ] App is accessible at the custom domain over HTTPS with a valid certificate
+- [ ] OAuth sign-in completes correctly from the new domain
+- [ ] The old `*.fly.dev` URL still works (or is redirected)
+- [ ] `VITE_API_BASE_URL` and Clerk origins are updated in all environments
+
+---
+
+### INFRA-21: Pre-launch checklist
+
+**Description:**
+Small but visible items to address before making the app public.
+
+**Acceptance criteria:**
+- [ ] Favicon is set (not the browser default)
+- [ ] `<title>` and `<meta name="description">` tags are set on all pages
+- [ ] Open Graph tags (`og:title`, `og:description`, `og:url`) are set for link previews
+- [ ] `robots.txt` exists at the root (allow all, or restrict as needed)
+- [ ] A 404 page is rendered for unknown routes (not a blank screen)
+- [ ] Console is free of errors and warnings in production build
+
+---
+
 ## Execution Order
 
-Tasks should be completed in this order. Local environment comes first so all subsequent work can be done against a running stack.
+*(Updated to reflect single production instance — no separate staging app)*
 
-1. INFRA-01 → INFRA-02 → INFRA-03 → INFRA-04 *(local dev environment — do this before any application code)*
-2. INFRA-08 *(Dockerfile — needed by CI and staging; write alongside backend Phase 1)*
-3. INFRA-05 → INFRA-06 *(CI checks — add before first PR)*
-4. INFRA-09 → INFRA-10 *(staging environment — set up once backend Phase 1 is deployable)*
-5. INFRA-07 *(auto-deploy to staging — wire up once staging is proven)*
-6. INFRA-11 → INFRA-12 → INFRA-13 *(production — set up after staging is stable)*
-7. INFRA-14 → INFRA-15 → INFRA-16 *(monitoring — set up at or just before production launch)*
+1. INFRA-01 → INFRA-02 → INFRA-03 → INFRA-04 *(local dev environment)*
+2. INFRA-08 *(Dockerfile)*
+3. INFRA-05 → INFRA-06 *(CI checks)*
+4. INFRA-07 *(auto-deploy to production on merge to main)*
+5. INFRA-17 *(database indexes — apply to production DB)*
+6. INFRA-18 → INFRA-19 *(Clerk branding + production instance — do before public launch)*
+7. INFRA-20 *(custom domain)*
+8. INFRA-21 *(pre-launch checklist)*
+9. INFRA-13 → INFRA-14 → INFRA-15 → INFRA-16 *(secrets docs + monitoring)*
 
 ---
 

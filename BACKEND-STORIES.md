@@ -562,7 +562,7 @@ Add structured request logging to all endpoints. Log method, path, status code, 
 
 ---
 
-### BE-19: `GET /api/me` endpoint
+### BE-19: `GET /api/me` endpoint *(implemented)*
 
 **Size:** S
 
@@ -574,6 +574,22 @@ Return the authenticated user's profile. If no User row exists for the Clerk ID 
 - [ ] `id` is the database primary key (Int64)
 - [ ] `avatarUrl` and `email` are `null` if absent on the Clerk user record
 - [ ] Missing or invalid JWT returns 401
+
+---
+
+### BE-19b: Return 502/504 for Judge0 network failures
+
+**Size:** S
+
+**Description:**
+The API contract specifies HTTP 502 when Judge0 is unreachable and 504 when Judge0 times out (poll exhausted). Currently the Judge0 client uses `fail` on network errors, which Servant catches as a generic 500. Poll-exhausted timeout produces a `SubmissionResult` with `StatusTimeout` (returned as 200 + `"status":"timeout"`), not a 504. Restructure the Judge0 error model to return typed errors.
+
+**Acceptance criteria:**
+- [ ] Judge0 network error → HTTP 502 with `{"error": "...", "code": "sandbox_unavailable"}`
+- [ ] Judge0 poll timeout (attempts exhausted) → HTTP 504 with `{"error": "...", "code": "sandbox_timeout"}`
+- [ ] Non-network errors (parse failures, unexpected status codes) → HTTP 500
+- [ ] `submitAndWait` in `Judge0.hs` returns `Either` instead of using `fail`
+- [ ] `submitHandler` maps the typed errors to the correct HTTP status codes
 
 ---
 
@@ -625,4 +641,4 @@ Implement stories in this sequence; each phase should be independently testable 
 2. BE-06 → BE-07 → BE-08 → BE-09 → BE-10 *(data layer complete)*
 3. BE-11 → BE-12 → BE-13 *(auth complete)*
 4. BE-15 → BE-16 → BE-17 → BE-18 → BE-19 → BE-20 → BE-21 *(progress, curriculum API, and me endpoint complete)*
-5. BE-14 → BE-22 *(Phase 10: per-user rate limiting, cross-device code restore)*
+5. BE-14 → BE-19b → BE-22 *(Phase 10: per-user rate limiting, Judge0 error model, cross-device code restore)*
