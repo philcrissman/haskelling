@@ -88,6 +88,16 @@
     }
   }
 
+  const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
+  const shortcutHint = isMac ? '⌘↵' : '⌃↵';
+
+  function onKeydown(e: KeyboardEvent) {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+      e.preventDefault();
+      handleSubmit();
+    }
+  }
+
   const lessonHtml = $derived(lesson ? (marked.parse(lesson) as string) : '');
 
   const statusLabel: Record<string, string> = {
@@ -112,6 +122,8 @@
     });
   }
 </script>
+
+<svelte:window onkeydown={onKeydown} />
 
 <div class="exercise-page">
   {#if lesson}
@@ -155,6 +167,7 @@
         onclick={handleSubmit}
       >
         {submitting ? 'Submitting…' : 'Submit'}
+        {#if !submitting}<kbd class="shortcut-hint">{shortcutHint}</kbd>{/if}
       </button>
     </div>
 
@@ -409,6 +422,16 @@
   .submit-btn:hover:not(:disabled) { background: #5b21b6; }
   .submit-btn:disabled { opacity: 0.65; cursor: not-allowed; }
   .submit-btn:focus-visible { outline: 2px solid #6d28d9; outline-offset: 2px; }
+
+  .shortcut-hint {
+    margin-left: 0.5rem;
+    font-family: inherit;
+    font-size: 0.78rem;
+    opacity: 0.7;
+    background: rgba(255,255,255,0.15);
+    border-radius: 3px;
+    padding: 0.1em 0.35em;
+  }
 
   /* Result panel */
 
