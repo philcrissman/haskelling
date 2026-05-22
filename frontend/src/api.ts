@@ -1,6 +1,13 @@
 import type { Exercise, ExercisesListResponse, SubmissionHistoryResponse, SubmissionResult, SubmitRequest } from './types';
 import { getToken } from './lib/auth';
 
+export class ApiError extends Error {
+  constructor(public readonly status: number, public readonly retryAfter?: number) {
+    super(`HTTP ${status}`);
+    this.name = 'ApiError';
+  }
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const token = await getToken();
   const headers: Record<string, string> = {
@@ -9,8 +16,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   };
   const res = await fetch(path, { ...init, headers });
   if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`HTTP ${res.status}: ${body}`);
+    const retryAfter = res.headers.get('Retry-After');
+    throw new ApiError(res.status, retryAfter ? parseInt(retryAfter, 10) : undefined);
   }
   return res.json() as Promise<T>;
 }

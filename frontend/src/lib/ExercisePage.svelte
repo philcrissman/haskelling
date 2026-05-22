@@ -1,7 +1,8 @@
 <script lang="ts">
   import { marked } from 'marked';
   import CodeEditor from './CodeEditor.svelte';
-  import { submitCode, getHistory } from '../api';
+  import { submitCode, getHistory, ApiError } from '../api';
+  import { clerk } from './auth';
   import type { Exercise, SubmissionHistoryItem, SubmissionResult } from '../types';
 
   interface Props {
@@ -58,12 +59,24 @@
       result = await submitCode({ exerciseId: exercise.id, code });
       if (historyVisible) await loadHistory();
     } catch (e) {
-      result = {
-        status: 'error',
-        output: e instanceof Error ? e.message : 'An unexpected error occurred.',
-        passedCount: 0,
-        failedCount: 0,
-      };
+      if (e instanceof ApiError && e.status === 401) {
+        clerk.redirectToSignIn({ redirectUrl: window.location.href });
+        return;
+      }
+      let message: string;
+      if (e instanceof ApiError) {
+        if (e.status === 429) {
+          const delay = e.retryAfter ? ` Please wait ${e.retryAfter}s before trying again.` : '';
+          message = `Too many submissions.${delay}`;
+        } else if (e.status === 502 || e.status === 504) {
+          message = 'The evaluation service is temporarily unavailable. Please try again shortly.';
+        } else {
+          message = 'An unexpected error occurred. Please try again.';
+        }
+      } else {
+        message = 'Network error. Check your connection and try again.';
+      }
+      result = { status: 'error', output: message, passedCount: 0, failedCount: 0 };
     } finally {
       submitting = false;
     }
@@ -112,7 +125,6 @@
   const humanMessage: Record<string, string> = {
     timeout:       'Execution timed out. Check for infinite loops or very slow recursion.',
     runtime_error: 'The program crashed at runtime.',
-    error:         'An unexpected error occurred. Try again.',
   };
 
   function formatDate(iso: string): string {

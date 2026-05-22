@@ -3,7 +3,7 @@
   import { clerk, initClerk, isSignedIn, signOut } from './lib/auth';
   import Sidebar from './lib/Sidebar.svelte';
   import ExercisePage from './lib/ExercisePage.svelte';
-  import { getExercises } from './api';
+  import { getExercises, ApiError } from './api';
   import type { Chapter, Exercise } from './types';
 
   let clerkReady = $state(false);
@@ -52,7 +52,11 @@
         if (first) navigate(first.id);
       }
     } catch (e) {
-      fetchError = e instanceof Error ? e.message : 'Failed to load exercises';
+      if (e instanceof ApiError && e.status === 401) {
+        clerk.redirectToSignIn({ redirectUrl: window.location.href });
+        return;
+      }
+      fetchError = 'Failed to load exercises. Check your connection and try again.';
     } finally {
       loading = false;
     }
@@ -124,7 +128,10 @@
       {#if loading}
         <div class="app-state"><span class="spinner"></span></div>
       {:else if fetchError}
-        <div class="app-state app-state--error">{fetchError}</div>
+        <div class="app-state app-state--error">
+          <p class="error-msg">{fetchError}</p>
+          <button class="retry-btn" onclick={loadExercises}>Retry</button>
+        </div>
       {:else if currentExercise}
         <ExercisePage exercise={currentExercise} lesson={currentLesson} />
       {:else}
@@ -170,7 +177,22 @@
     font-size: 0.95rem;
   }
 
-  .app-state--error { color: #dc2626; }
+  .app-state--error { color: #dc2626; flex-direction: column; gap: 0.75rem; }
+
+  .error-msg { margin: 0; font-size: 0.95rem; }
+
+  .retry-btn {
+    padding: 0.45rem 1.25rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    background: #dc2626;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .retry-btn:hover { background: #b91c1c; }
 
   .spinner {
     display: inline-block;
