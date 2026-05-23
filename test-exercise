@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Usage:
-#   ./test-exercise <chapter/slug>            — run tests against stub.hs
-#   ./test-exercise <chapter/slug> solution   — run tests against solution.hs
+#   ./test-exercise <chapter/slug>            — run tests against solution.hs (default)
+#   ./test-exercise <chapter/slug> stub       — run tests against stub.hs
 set -euo pipefail
 
 if [[ $# -lt 1 ]]; then
@@ -16,7 +16,7 @@ if [[ ! -d "$EXERCISE_DIR" ]]; then
   exit 1
 fi
 
-SOURCE="${2:-stub}"
+SOURCE="${2:-solution}"
 case "$SOURCE" in
   stub)     SRC_FILE="stub.hs" ;;
   solution) SRC_FILE="solution.hs" ;;
