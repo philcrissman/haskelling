@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# Usage:
+#   ./test-exercise <chapter/slug>            — run tests against stub.hs
+#   ./test-exercise <chapter/slug> solution   — run tests against solution.hs
+set -euo pipefail
+
+if [[ $# -lt 1 ]]; then
+  echo "usage: $0 <chapter/slug> [solution]" >&2
+  exit 1
+fi
+
+EXERCISE_DIR="curriculum/exercises/$1"
+
+if [[ ! -d "$EXERCISE_DIR" ]]; then
+  echo "error: exercise directory not found: $EXERCISE_DIR" >&2
+  exit 1
+fi
+
+SOURCE="${2:-stub}"
+case "$SOURCE" in
+  stub)     SRC_FILE="stub.hs" ;;
+  solution) SRC_FILE="solution.hs" ;;
+  *)
+    echo "error: second argument must be 'stub' or 'solution', got: $2" >&2
+    exit 1
+    ;;
+esac
+
+TMPDIR=$(mktemp -d)
+trap 'rm -rf "$TMPDIR"' EXIT
+
+cp "$EXERCISE_DIR/$SRC_FILE"  "$TMPDIR/$(basename "$EXERCISE_DIR/$SRC_FILE")"
+cp "$EXERCISE_DIR/tests.hs"   "$TMPDIR/tests.hs"
+
+# Rename the source file to match the module name expected by the tests
+# (stub.hs / solution.hs → <ModuleName>.hs derived from the module declaration)
+MODULE=$(grep -m1 '^module ' "$EXERCISE_DIR/$SRC_FILE" | awk '{print $2}')
+if [[ -n "$MODULE" ]]; then
+  mv "$TMPDIR/$(basename "$EXERCISE_DIR/$SRC_FILE")" "$TMPDIR/$MODULE.hs"
+fi
+
+echo "Testing $1 ($SOURCE)..."
+runghc -i"$TMPDIR" "$TMPDIR/tests.hs"
