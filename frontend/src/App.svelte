@@ -6,6 +6,25 @@
   import { getExercises, ApiError } from './api';
   import type { Chapter, Exercise } from './types';
 
+  type Theme = 'light' | 'dark';
+
+  function getInitialTheme(): Theme {
+    const saved = localStorage.getItem('haskelling:theme');
+    if (saved === 'light' || saved === 'dark') return saved;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+
+  let theme: Theme = $state(getInitialTheme());
+
+  $effect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('haskelling:theme', theme);
+  });
+
+  function toggleTheme() {
+    theme = theme === 'dark' ? 'light' : 'dark';
+  }
+
   let clerkReady = $state(false);
   let signedIn = $state(false);
   let chapters: Chapter[] = $state([]);
@@ -122,6 +141,8 @@
         avatarUrl={userAvatarUrl}
         displayName={userDisplayName}
         onSignOut={handleSignOut}
+        {theme}
+        onToggleTheme={toggleTheme}
       />
     </aside>
     <main class="main-content">
@@ -149,23 +170,17 @@
   }
 
   .sidebar-container {
-    width: 240px;
+    width: 260px;
     flex-shrink: 0;
     overflow-y: auto;
-    border-right: 1px solid #e5e5e5;
-    background: #fafafa;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    .sidebar-container {
-      border-right-color: #2a2a2a;
-      background: #111;
-    }
+    border-right: 1px solid var(--border);
+    background: var(--bg-subtle);
   }
 
   .main-content {
     flex: 1;
     overflow-y: auto;
+    background: var(--bg);
   }
 
   .app-state {
@@ -173,33 +188,35 @@
     align-items: center;
     justify-content: center;
     height: 100vh;
-    color: #888;
-    font-size: 0.95rem;
+    color: var(--text-3);
+    font-size: 0.9rem;
   }
 
-  .app-state--error { color: #dc2626; flex-direction: column; gap: 0.75rem; }
+  .app-state--error { color: var(--rust); flex-direction: column; gap: 0.75rem; }
 
-  .error-msg { margin: 0; font-size: 0.95rem; }
+  .error-msg { margin: 0; font-size: 0.9rem; }
 
   .retry-btn {
-    padding: 0.45rem 1.25rem;
-    font-size: 0.875rem;
+    padding: 0.4rem 1.1rem;
+    font-size: 0.82rem;
     font-weight: 500;
-    background: #dc2626;
+    background: var(--rust);
     color: #fff;
     border: none;
-    border-radius: 4px;
+    border-radius: var(--radius-md);
     cursor: pointer;
+    font-family: var(--font-sans);
+    letter-spacing: 0.02em;
   }
 
-  .retry-btn:hover { background: #b91c1c; }
+  .retry-btn:hover { opacity: 0.88; }
 
   .spinner {
     display: inline-block;
     width: 24px;
     height: 24px;
-    border: 2px solid #e5e5e5;
-    border-top-color: #6d28d9;
+    border: 2px solid var(--border);
+    border-top-color: var(--brand);
     border-radius: 50%;
     animation: spin 0.7s linear infinite;
   }
@@ -215,11 +232,7 @@
     align-items: center;
     justify-content: center;
     height: 100vh;
-    background: #f5f3ff;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    .sign-in-bg { background: #1a1025; }
+    background: var(--bg-subtle);
   }
 
   .sign-in-card {
@@ -228,39 +241,43 @@
     align-items: center;
     gap: 1rem;
     padding: 3rem 2.5rem;
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    background: var(--bg);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+    border: 1px solid var(--border);
     text-align: center;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    .sign-in-card { background: #1e1535; box-shadow: 0 4px 24px rgba(0,0,0,0.4); }
+    min-width: 280px;
   }
 
   .brand {
+    font-family: var(--font-display);
     font-size: 2rem;
     font-weight: 700;
-    color: #6d28d9;
+    font-style: italic;
+    color: var(--brand);
     margin: 0;
   }
 
   .tagline {
     margin: 0;
-    color: #888;
-    font-size: 0.95rem;
+    color: var(--text-3);
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
   }
 
   .sign-in-btn {
     margin-top: 0.5rem;
     padding: 0.65rem 1.75rem;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     font-weight: 500;
     background: #24292e;
     color: #fff;
     border: none;
-    border-radius: 6px;
+    border-radius: var(--radius-md);
     cursor: pointer;
+    font-family: var(--font-sans);
     display: flex;
     align-items: center;
     gap: 0.5rem;
