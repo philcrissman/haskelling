@@ -22,6 +22,17 @@
     localStorage.setItem('haskelling:theme', theme);
   });
 
+  $effect(() => {
+    if (currentExercise) {
+      document.title = `${currentExercise.title} — haskelling`;
+    } else if (currentLessonSlug) {
+      const ch = chapters.find(c => c.slug === currentLessonSlug);
+      document.title = ch ? `${ch.title} — haskelling` : 'haskelling';
+    } else {
+      document.title = 'haskelling — Learn Haskell by doing';
+    }
+  });
+
   function toggleTheme() {
     theme = theme === 'dark' ? 'light' : 'dark';
   }
@@ -185,7 +196,17 @@
         {@const lessonChapter = chapters.find(c => c.slug === currentLessonSlug)}
         {#if lessonChapter}
           <LessonPage title={lessonChapter.title} lesson={lessonChapter.lesson} />
+        {:else}
+          <div class="app-state app-state--404">
+            <h2>Lesson not found</h2>
+            <p>That lesson doesn't exist. Pick one from the sidebar.</p>
+          </div>
         {/if}
+      {:else if currentId && !currentExercise}
+        <div class="app-state app-state--404">
+          <h2>Exercise not found</h2>
+          <p>That exercise doesn't exist. Pick one from the sidebar.</p>
+        </div>
       {:else if currentExercise}
         <ExercisePage exercise={currentExercise} lesson={currentLesson} />
       {:else}
@@ -313,6 +334,7 @@
   }
 
   .app-state--error { color: var(--rust); flex-direction: column; gap: 0.75rem; }
+  .app-state--404 { flex-direction: column; gap: 0.5rem; opacity: 0.7; }
 
   .error-msg { margin: 0; font-size: 0.9rem; }
 
