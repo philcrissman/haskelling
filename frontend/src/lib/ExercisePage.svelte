@@ -406,6 +406,7 @@
     color: #fff;
     cursor: pointer;
     min-width: 8rem;
+    min-height: 44px;
     letter-spacing: 0.01em;
     transition: background 0.1s;
   }
@@ -586,4 +587,20 @@
   .status-badge--runtime_error,
   .status-badge--error                                          { background: var(--badge-fail-bg); color: var(--badge-fail-text); }
   .status-badge--timeout                                        { background: var(--badge-warn-bg); color: var(--badge-warn-text); }
+
+  @media (max-width: 640px) {
+    .exercise-page {
+      padding: 1.25rem 1rem;
+      gap: 1.25rem;
+    }
+
+    .actions {
+      justify-content: stretch;
+    }
+
+    .submit-btn {
+      width: 100%;
+      justify-content: center;
+    }
+  }
 </style>

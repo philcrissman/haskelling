@@ -25,6 +25,7 @@
     theme = theme === 'dark' ? 'light' : 'dark';
   }
 
+  let sidebarOpen = $state(false);
   let clerkReady = $state(false);
   let signedIn = $state(false);
   let chapters: Chapter[] = $state([]);
@@ -58,6 +59,7 @@
   function navigate(id: string) {
     window.location.hash = `/exercises/${encodeURIComponent(id)}`;
     currentId = id;
+    sidebarOpen = false;
   }
 
   async function loadExercises() {
@@ -132,7 +134,14 @@
 
 {:else}
   <div class="app-layout">
-    <aside class="sidebar-container">
+    <div class="mobile-header">
+      <button class="menu-btn" onclick={() => sidebarOpen = !sidebarOpen} aria-label="Toggle navigation">☰</button>
+      <span class="mobile-brand">haskelling</span>
+    </div>
+    {#if sidebarOpen}
+      <div class="sidebar-backdrop" onclick={() => sidebarOpen = false} aria-hidden="true"></div>
+    {/if}
+    <aside class="sidebar-container" class:open={sidebarOpen}>
       <Sidebar
         {chapters}
         loading={loading}
@@ -165,9 +174,12 @@
 <style>
   .app-layout {
     display: flex;
-    height: 100vh;
+    height: 100dvh;
     overflow: hidden;
   }
+
+  .mobile-header { display: none; }
+  .sidebar-backdrop { display: none; }
 
   .sidebar-container {
     width: 260px;
@@ -181,6 +193,72 @@
     flex: 1;
     overflow-y: auto;
     background: var(--bg);
+  }
+
+  @media (max-width: 640px) {
+    .app-layout {
+      flex-direction: column;
+    }
+
+    .mobile-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      height: 48px;
+      padding: 0 1rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-subtle);
+      flex-shrink: 0;
+      z-index: 100;
+    }
+
+    .menu-btn {
+      background: none;
+      border: none;
+      font-size: 1.25rem;
+      line-height: 1;
+      color: var(--text-2);
+      cursor: pointer;
+      padding: 0.25rem 0.35rem;
+      border-radius: var(--radius-sm);
+    }
+
+    .menu-btn:hover { color: var(--text); }
+
+    .mobile-brand {
+      font-family: var(--font-display);
+      font-style: italic;
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: var(--brand);
+    }
+
+    .sidebar-backdrop {
+      display: block;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.4);
+      z-index: 140;
+    }
+
+    .sidebar-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 80vw;
+      max-width: 300px;
+      height: 100%;
+      z-index: 150;
+      transform: translateX(-100%);
+      transition: transform 0.22s ease;
+      border-right: 1px solid var(--border);
+      box-shadow: none;
+    }
+
+    .sidebar-container.open {
+      transform: translateX(0);
+      box-shadow: 4px 0 24px rgba(0, 0, 0, 0.2);
+    }
   }
 
   .app-state {

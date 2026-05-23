@@ -98,4 +98,10 @@
     font-size: 14px;
     line-height: 1.6;
   }
+
+  @media (max-width: 640px) {
+    .editor :global(.cm-scroller) {
+      font-size: 16px;
+    }
+  }
 </style>
