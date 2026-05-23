@@ -29,6 +29,7 @@ import Judge0 (Judge0Config (..), Judge0Error (..), SubmissionResult (..), submi
 import Network.HTTP.Types (statusCode, status429)
 import Network.Socket (SockAddr (..), hostAddressToTuple)
 import Network.Wai (pathInfo, remoteHost, requestMethod, responseStatus, responseLBS)
+import Network.Wai.Middleware.Cors
 import qualified Schema
 import Schema (HintList (..))
 import Servant
@@ -323,8 +324,16 @@ server cfg pool authEnv userLimiter rateLimitPerUser =
     :<|> submissionHistoryHandler pool authEnv
     :<|> progressHandler authEnv pool
 
+corsPolicy :: CorsResourcePolicy
+corsPolicy = simpleCorsResourcePolicy
+  { corsOrigins        = Nothing
+  , corsMethods        = ["GET", "POST", "OPTIONS"]
+  , corsRequestHeaders = ["Content-Type", "Authorization"]
+  }
+
 app :: Judge0Config -> RateLimiter -> Int -> RateLimiter -> Int -> ConnectionPool -> AuthEnv -> Application
 app cfg ipLimiter rateLimitPerIp userLimiter rateLimitPerUser pool authEnv =
+  cors (const (Just corsPolicy)) $
   loggingMiddleware $
   rateLimitMiddleware ipLimiter rateLimitPerIp $
   serve (Proxy :: Proxy API) (server cfg pool authEnv userLimiter rateLimitPerUser)
