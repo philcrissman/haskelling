@@ -362,6 +362,32 @@ Small but visible items to address before making the app public.
 
 ---
 
+---
+
+### INFRA-22: Contributor dev mode — run the app without private keys
+
+**Size:** M–L
+
+**Description:**
+Currently the backend will not start without real Clerk keys (`CLERK_PUBLISHABLE_KEY` + `CLERK_SECRET_KEY`), and Judge0 mock mode produces fake pass results rather than real evaluation. This means a new contributor cannot run the full app locally without being given credentials — a meaningful barrier to external contribution.
+
+Design and implement a dev-auth mode that allows the app to run without Clerk:
+
+- A `CLERK_MOCK=true` (or similar) env var that bypasses JWT verification and returns a hardcoded test user for all requests
+- The frontend would need a corresponding mode that skips Clerk SDK initialization and renders the app as if signed in
+- Judge0 mock mode already exists (`JUDGE0_MOCK=true`) and handles that side
+
+The open questions are on the auth side: Clerk's SDK is present in both the frontend (for the sign-in UI) and backend (for JWT verification). Mocking both cleanly without leaving security holes in non-mock builds will need some thought.
+
+**Depends on:** Nothing blocking — can be designed and implemented independently.
+
+**Acceptance criteria:**
+- [ ] A contributor can clone the repo, copy `.env.example` files, and `cabal run` + `npm run dev` without any external credentials
+- [ ] Mock auth mode is gated behind an env var that defaults to off — it cannot be accidentally enabled in production
+- [ ] The README documents the mock-auth workflow clearly
+
+---
+
 ## Notes
 
 **Haskell Docker build times:** The first `docker build` will take 20–40 minutes as GHC compiles all dependencies from source. Subsequent builds with unchanged dependencies take 2–5 minutes. Fly.io's remote build cache helps but is not perfectly reliable — budget time for occasional slow builds.

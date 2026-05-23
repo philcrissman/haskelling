@@ -2,7 +2,7 @@
 
 A Rustlings/koans-style web app for learning Haskell. Complete exercises in your browser; a hidden test suite checks your solution and tells you pass or fail.
 
-**Status:** Under active development. Backend deployed to Fly.io staging.
+**Status:** Under active development — pre-launch.
 
 ---
 
@@ -37,19 +37,34 @@ docker compose up -d
 
 # 3. Configure backend environment
 cp backend/.env.example backend/.env.local
-# Edit backend/.env.local — JUDGE0_MOCK=true is already set for local dev.
-# Fill in CLERK_PUBLISHABLE_KEY and CLERK_SECRET_KEY when you have a Clerk account.
+# Edit backend/.env.local — see "Secret keys" below before proceeding.
 
 # 4. Configure frontend environment
 cp frontend/.env.example frontend/.env.local
 # Edit frontend/.env.local — fill in VITE_CLERK_PUBLISHABLE_KEY from your Clerk dashboard.
 
-# 5. Install backend dependencies
+# 5. Install backend dependencies (first run takes a few minutes)
 cd backend && cabal build all && cd ..
 
 # 6. Install frontend dependencies
 cd frontend && npm install && cd ..
 ```
+
+---
+
+## Secret keys
+
+The app uses two external services that require credentials:
+
+**Clerk (auth)** — required. The backend will not start without both keys.
+Get them from your [Clerk dashboard](https://dashboard.clerk.com) under the Development instance.
+Set `CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY` in `backend/.env.local`, and `VITE_CLERK_PUBLISHABLE_KEY` in `frontend/.env.local`.
+
+**Judge0 (code evaluation)** — optional for local dev.
+`JUDGE0_MOCK=true` is the default in `backend/.env.example`. With mock mode on, all submissions return a hardcoded pass result without calling Judge0, which is enough for most frontend and backend development.
+Set `JUDGE0_MOCK=false` and provide a real `JUDGE0_API_KEY` (via [RapidAPI](https://rapidapi.com/judge0-official/api/judge0-ce)) only when you need to test actual code evaluation.
+
+> **Note:** Running the app without Clerk keys is not currently supported — there is no unauthenticated dev mode. This is a known gap; a contributor-friendly dev mode that mocks auth is planned but not yet implemented.
 
 ---
 
@@ -61,40 +76,68 @@ Three things to start — database, backend, frontend. Each in its own terminal:
 # Terminal 1 — database (if not already running)
 docker compose up -d
 
-# Terminal 2 — backend
+# Terminal 2 — backend (from the repo root)
 cd backend
-cabal run
+export $(cat .env.local | xargs)
+cabal run haskelling
 
-# Terminal 3 — frontend
+# Terminal 3 — frontend (from the repo root)
 cd frontend
 npm run dev
 ```
 
-The backend runs on `http://localhost:8080`.
-The frontend dev server runs on `http://localhost:5173` and proxies `/api/*` to the backend.
+- Backend: `http://localhost:8080`
+- Frontend: `http://localhost:5173` (proxies `/api/*` to the backend)
 
 ---
 
-## Running tests and checks
+## Checks
 
 ```bash
-# Backend tests
-cd backend && cabal test
-
-# Frontend type checking
+# Frontend type check
 cd frontend && npm run typecheck
 
-# Frontend production build check
+# Frontend production build
 cd frontend && npm run build
+
+# Verify all exercise solutions pass their own test suites (requires GHC on PATH)
+./test-all-exercises
 ```
 
 ---
 
-## Judge0 mock mode
+## Working with exercises
 
-By default, `backend/.env.local` has `JUDGE0_MOCK=true`. This makes the submission endpoint return a hardcoded pass result without calling Judge0, so you can develop without an API key or incurring costs.
+Exercises live under `curriculum/exercises/<chapter>/<slug>/`:
 
-Set `JUDGE0_MOCK=false` (and provide a real `JUDGE0_API_KEY`) when you need to test real code evaluation.
+```
+curriculum/
+  exercises/
+    basics/
+      hello-world/
+        exercise.json   ← title, order, learning_objective, hints
+        stub.hs         ← starting code shown to the user
+        tests.hs        ← hidden test suite run by Judge0
+        solution.hs     ← canonical solution
+  lessons/
+    basics.md           ← chapter lesson (markdown)
+    ...
+```
+
+**Test a single exercise locally** (no server needed):
+
+```bash
+./test-exercise basics/hello-world           # runs solution — should pass
+./test-exercise basics/hello-world stub      # runs stub — expected to fail
+```
+
+**Verify all exercises before pushing:**
+
+```bash
+./test-all-exercises
+```
+
+**Add a new exercise:** create the directory, add the four files, restart the backend.
 
 ---
 
@@ -102,17 +145,13 @@ Set `JUDGE0_MOCK=false` (and provide a real `JUDGE0_API_KEY`) when you need to t
 
 ```
 haskelling/
-├── backend/           # Haskell API server (Servant)
-├── frontend/          # Svelte SPA (Vite)
+├── backend/            # Haskell API server (Servant)
+├── frontend/           # Svelte SPA (Vite)
+├── curriculum/
+│   ├── exercises/      # One directory per exercise (see above)
+│   └── lessons/        # Chapter lesson markdown files
 ├── docker-compose.yml
-├── CURRICULUM.json    # All 30 exercises
-├── ADR-001.md         # Architecture decisions
-├── DECISIONS.md       # Running decisions log
-└── STORY-ORDER.md     # Implementation phase ordering
+├── ADR-001.md          # Architecture decisions
+├── DECISIONS.md        # Running decisions log
+└── STORY-ORDER.md      # Implementation phase ordering
 ```
-
----
-
-## Contributing
-
-Exercises are added by editing `CURRICULUM.json` and opening a pull request. See `CURRICULUM.json` for the exercise schema and existing examples.

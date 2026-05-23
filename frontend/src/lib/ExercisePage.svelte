@@ -405,7 +405,7 @@
 
   /* Submit */
 
-  .actions { display: flex; justify-content: flex-end; }
+  .actions { display: flex; justify-content: flex-end; padding: 0.5rem 0; }
 
   .submit-btn {
     padding: 0.5rem 1.5rem;
