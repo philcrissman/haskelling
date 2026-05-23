@@ -185,6 +185,21 @@ Each phase should be independently testable before starting the next.
 
 ---
 
+## Phase 10.5 — Pre-launch Features & Content
+
+*Content correctness, curriculum tooling, and two small feature gaps before going live.*
+
+| ID | Story | Notes |
+|----|-------|-------|
+| — | Review and validate all 30 exercises (issue #23) | Manual content QA — broken tests or stubs on day one is bad |
+| FE-25 | Lesson link per chapter in sidebar (issue #67) | Discoverability — newcomers won't find lessons otherwise |
+| CONTENT-02 | Replace CURRICULUM.json with per-exercise directory format (issue #68) | Structural change to how the app seeds — safer to verify before launch than after |
+| FE-24 | Click submission history entry to load its code (issue #66) | Post-launch candidate — move here only if time allows |
+
+**Phase complete when:** All exercises pass their own test suites, the curriculum seeds correctly from the new directory format, and chapter lessons are reachable from the sidebar.
+
+---
+
 ## Phase 11 — Production Launch
 
 *The current Fly.io deployment is production (no separate staging instance). This phase hardens it for public use.*
@@ -221,8 +236,9 @@ Each phase should be independently testable before starting the next.
 | 8 — Frontend navigation | 7 | FE-05–10, FE-22 |
 | 9 — Auth | 8 | BE-11–13, FE-11–15 |
 | 10 — Polish | 10 | BE-14, BE-19b, FE-16–21, BE-22, FE-23 |
+| 10.5 — Pre-launch | 3–4 | #23 (review), FE-25, CONTENT-02, FE-24 (optional) |
 | 11 — Production | 11 | INFRA-07, INFRA-12–15, INFRA-17–21 |
-| **Total** | **63** | |
+| **Total** | **76–77** | |
 
 ---
 
