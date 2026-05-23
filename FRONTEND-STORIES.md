@@ -451,6 +451,24 @@ Ensure the app is navigable by keyboard alone and that submission results are an
 
 ---
 
+### FE-26: Add analytics page tracking
+
+**Size:** S
+
+**Description:**
+Wire up the analytics tracker (from `~/Projects/philcrissman-analytics`) so every exercise navigation and initial page load is recorded. All navigation funnels through the `navigate()` function in `App.svelte` and the hash-read in `onMount`, so there are only two call sites.
+
+**Depends on:** INFRA-20 (custom domain live and configured in the tracker)
+
+**Acceptance criteria:**
+- [ ] The analytics tracker script is loaded in `index.html`
+- [ ] A page-view event fires on initial load (covering direct links and refreshes via the `onMount` hash read)
+- [ ] A page-view event fires on every call to `navigate()` in `App.svelte`
+- [ ] No tracking fires for unauthenticated or bot traffic (if the tracker supports it)
+- [ ] The tracker domain/site ID is read from an environment variable, not hard-coded
+
+---
+
 ## Execution Order
 
 Implement stories in this sequence:

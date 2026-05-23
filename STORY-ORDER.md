@@ -212,6 +212,7 @@ Each phase should be independently testable before starting the next.
 | INFRA-18 | Custom GitHub OAuth App — Clerk branding (shows "Haskelling" on OAuth consent screen) |
 | INFRA-19 | Switch to Clerk production instance |
 | INFRA-20 | Custom domain: DNS setup + Fly.io cert + Clerk redirect URIs |
+| FE-26 | Add analytics page tracking (depends on INFRA-20; add tracker script + fire on navigate + initial load) |
 | INFRA-21 | Pre-launch checklist: favicon, meta tags, robots.txt, 404 page |
 | INFRA-13 | Secrets management documentation |
 | INFRA-14 | Uptime monitoring (UptimeRobot or equivalent) |
@@ -237,7 +238,7 @@ Each phase should be independently testable before starting the next.
 | 9 — Auth | 8 | BE-11–13, FE-11–15 |
 | 10 — Polish | 10 | BE-14, BE-19b, FE-16–21, BE-22, FE-23 |
 | 10.5 — Pre-launch | 3–4 | #23 (review), FE-25, CONTENT-02, FE-24 (optional) |
-| 11 — Production | 11 | INFRA-07, INFRA-12–15, INFRA-17–21 |
+| 11 — Production | 12 | INFRA-07, INFRA-12–15, INFRA-17–21, FE-26 |
 | **Total** | **76–77** | |
 
 ---
