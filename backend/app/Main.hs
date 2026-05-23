@@ -4,7 +4,7 @@ import Auth (newAuthEnv, parseJwksUrl)
 import Control.Monad (when)
 import Data.ByteString.Char8 qualified as BC8
 import Data.Text qualified as T
-import Database (makePool)
+import Database (createIndexes, makePool)
 import Database.Persist.Postgresql (runSqlPool)
 import Database.Persist.Sql (runMigration)
 import Judge0 (Judge0Config (..))
@@ -35,7 +35,8 @@ main = do
 
   pool <- makePool dbUrl poolSize
   runSqlPool (runMigration migrateAll) pool
-  putStrLn "haskelling: migrations applied"
+  runSqlPool createIndexes pool
+  putStrLn "haskelling: migrations and indexes applied"
 
   -- Seed
   curriculumDir <- lookupEnv "CURRICULUM_DIR" >>= \case
