@@ -24,7 +24,7 @@ import Data.Text qualified as T
 import Data.Time (UTCTime, diffUTCTime, getCurrentTime)
 import Database.Persist (Entity (..), SelectOpt (..), get, getBy, insert, insert_, selectList, update, (==.), (=.))
 import Database.Persist.Postgresql (ConnectionPool, runSqlPool)
-import Database.Persist.Sql (SqlPersistT, fromSqlKey, rawExecute)
+import Database.Persist.Sql (SqlPersistT, Single (..), fromSqlKey, rawSql)
 import Judge0 (Judge0Config (..), Judge0Error (..), SubmissionResult (..), submitAndWait)
 import Network.HTTP.Types (statusCode, status429)
 import Network.Socket (SockAddr (..), hostAddressToTuple)
@@ -128,7 +128,7 @@ toChapterResponse (Entity _ ch) exs = ChapterResponse
 
 healthHandler :: ConnectionPool -> Handler HealthResponse
 healthHandler pool = do
-  result <- liftIO $ (try (runSqlPool (rawExecute "SELECT 1" []) pool) :: IO (Either SomeException ()))
+  result <- liftIO $ (try (runSqlPool (rawSql "SELECT 1" [] :: SqlPersistT IO [Single Int]) pool) :: IO (Either SomeException [Single Int]))
   case result of
     Left err -> do
       liftIO $ putStrLn $ "health: db check failed: " <> show err
