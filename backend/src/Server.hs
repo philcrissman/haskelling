@@ -130,7 +130,9 @@ healthHandler :: ConnectionPool -> Handler HealthResponse
 healthHandler pool = do
   result <- liftIO $ (try (runSqlPool (rawExecute "SELECT 1" []) pool) :: IO (Either SomeException ()))
   case result of
-    Left _  -> jsonError err503 "database unreachable" "db_error"
+    Left err -> do
+      liftIO $ putStrLn $ "health: db check failed: " <> show err
+      jsonError err503 "database unreachable" "db_error"
     Right _ -> pure $ HealthResponse { status = "ok" }
 
 meHandler :: AuthEnv -> ConnectionPool -> Maybe Text -> Handler MeResponse
