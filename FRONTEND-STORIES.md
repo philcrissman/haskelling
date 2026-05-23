@@ -481,3 +481,14 @@ Implement stories in this sequence:
 FE-23 depends on BE-22 (add `code` field to submission history response).
 
 FE-08 (progress indicators) depends on the backend Phase 3 auth being complete — implement the component in Phase 2 but the progress data will be placeholder until auth is wired up in Phase 3.
+
+---
+
+### FE-27: Frontend test suite (issue #73)
+
+**Size:** L
+
+**Description:**
+Add Vitest + @testing-library/svelte component tests and mocked API tests. Optionally add Playwright smoke tests. See issue #73 for full scope.
+
+**Deferred — post-launch.**

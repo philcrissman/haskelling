@@ -642,3 +642,14 @@ Implement stories in this sequence; each phase should be independently testable 
 3. BE-11 → BE-12 → BE-13 *(auth complete)*
 4. BE-15 → BE-16 → BE-17 → BE-18 → BE-19 → BE-20 → BE-21 *(progress, curriculum API, and me endpoint complete)*
 5. BE-14 → BE-19b → BE-22 *(Phase 10: per-user rate limiting, Judge0 error model, cross-device code restore)*
+
+---
+
+### BE-23: Backend test suite (issue #72)
+
+**Size:** L
+
+**Description:**
+Add a Haskell test suite covering unit tests (pure logic, no DB) and integration tests (against a real test DB). See issue #72 for full scope.
+
+**Deferred — post-launch.**

@@ -223,6 +223,17 @@ Each phase should be independently testable before starting the next.
 
 ---
 
+## Phase 12 — Post-launch: Test Coverage
+
+*Deferred until after public launch. The app ships without automated tests; this phase adds them.*
+
+| ID | Story |
+|----|-------|
+| BE-23 | Backend test suite — Haskell unit and integration tests (issue #72) |
+| FE-27 | Frontend test suite — Vitest component and API tests (issue #73) |
+
+---
+
 ## Full Story Count
 
 | Phase | Stories | IDs |
@@ -239,7 +250,8 @@ Each phase should be independently testable before starting the next.
 | 10 — Polish | 10 | BE-14, BE-19b, FE-16–21, BE-22, FE-23 |
 | 10.5 — Pre-launch | 3–4 | #23 (review), FE-25, CONTENT-02, FE-24 (optional) |
 | 11 — Production | 12 | INFRA-07, INFRA-12–15, INFRA-17–21, FE-26 |
-| **Total** | **76–77** | |
+| 12 — Test coverage | 2 | BE-23, FE-27 |
+| **Total** | **78–79** | |
 
 ---
 
