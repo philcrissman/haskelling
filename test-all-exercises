@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# Run solution tests for every exercise. Exits non-zero if any fail.
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+EXERCISES_DIR="$SCRIPT_DIR/curriculum/exercises"
+
+passed=0
+failed=0
+failures=()
+
+while IFS= read -r -d '' exercise_json; do
+  rel="${exercise_json#"$EXERCISES_DIR/"}"   # e.g. basics/hello-world/exercise.json
+  slug="${rel%/exercise.json}"               # e.g. basics/hello-world
+
+  if "$SCRIPT_DIR/test-exercise" "$slug" solution > /tmp/te_out 2>&1; then
+    echo "  PASS  $slug"
+    ((passed++))
+  else
+    echo "  FAIL  $slug"
+    cat /tmp/te_out | sed 's/^/        /'
+    ((failed++))
+    failures+=("$slug")
+  fi
+done < <(find "$EXERCISES_DIR" -name exercise.json -print0 | sort -z)
+
+echo ""
+echo "$((passed + failed)) exercises — $passed passed, $failed failed"
+
+if [[ $failed -gt 0 ]]; then
+  echo ""
+  echo "Failing exercises:"
+  for f in "${failures[@]}"; do echo "  $f"; done
+  exit 1
+fi
