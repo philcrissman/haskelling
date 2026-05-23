@@ -40,4 +40,15 @@ if [[ -n "$MODULE" ]]; then
 fi
 
 echo "Testing $1 ($SOURCE)..."
-runghc -i"$TMPDIR" "$TMPDIR/tests.hs"
+if runghc -i"$TMPDIR" "$TMPDIR/tests.hs" 2>&1; then
+  echo ""
+  echo "PASS"
+else
+  echo ""
+  if [[ "$SOURCE" == "stub" ]]; then
+    echo "FAIL (stub not yet implemented — expected)"
+  else
+    echo "FAIL"
+  fi
+  exit 1
+fi
