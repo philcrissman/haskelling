@@ -5,7 +5,9 @@
     chapters: Chapter[];
     loading?: boolean;
     currentId: string;
+    currentLessonSlug: string;
     onSelect: (id: string) => void;
+    onSelectLesson: (slug: string) => void;
     avatarUrl: string | null;
     displayName: string;
     onSignOut: () => void;
@@ -13,7 +15,7 @@
     onToggleTheme: () => void;
   }
 
-  const { chapters, loading = false, currentId, onSelect, avatarUrl, displayName, onSignOut, theme, onToggleTheme }: Props = $props();
+  const { chapters, loading = false, currentId, currentLessonSlug, onSelect, onSelectLesson, avatarUrl, displayName, onSignOut, theme, onToggleTheme }: Props = $props();
 </script>
 
 <nav class="sidebar" aria-label="Exercise navigation">
@@ -39,6 +41,19 @@
       <section class="chapter-section">
         <h2 class="chapter-heading">{chapter.title}</h2>
         <ul class="exercise-list">
+          {#if chapter.lesson}
+            <li>
+              <a
+                href="#{`/lessons/${chapter.slug}`}"
+                class="exercise-link lesson-link"
+                class:active={chapter.slug === currentLessonSlug}
+                aria-current={chapter.slug === currentLessonSlug ? 'page' : undefined}
+                onclick={(e) => { e.preventDefault(); onSelectLesson(chapter.slug); }}
+              >
+                Lesson
+              </a>
+            </li>
+          {/if}
           {#each chapter.exercises as exercise}
             <li>
               <a
@@ -183,6 +198,22 @@
     background: var(--brand-subtle);
     color: var(--brand-text);
     font-weight: 400;
+  }
+
+  .lesson-link {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-3);
+  }
+
+  .lesson-link:hover {
+    color: var(--brand-text);
+  }
+
+  .lesson-link.active {
+    color: var(--brand-text);
   }
 
   .user-footer {

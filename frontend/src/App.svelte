@@ -3,6 +3,7 @@
   import { clerk, initClerk, isSignedIn, signOut } from './lib/auth';
   import Sidebar from './lib/Sidebar.svelte';
   import ExercisePage from './lib/ExercisePage.svelte';
+  import LessonPage from './lib/LessonPage.svelte';
   import { getExercises, ApiError } from './api';
   import type { Chapter, Exercise } from './types';
 
@@ -32,6 +33,7 @@
   let loading = $state(true);
   let fetchError: string | null = $state(null);
   let currentId: string | null = $state(null);
+  let currentLessonSlug: string | null = $state(null);
 
   const currentExercise = $derived<Exercise | null>(
     chapters.flatMap(c => c.exercises).find(e => e.id === currentId) ?? null
@@ -51,14 +53,24 @@
 
   const userAvatarUrl = $derived(clerk.user?.imageUrl ?? null);
 
-  function parseHash(): string | null {
-    const m = window.location.hash.match(/^#\/exercises\/(.+)$/);
-    return m ? decodeURIComponent(m[1]) : null;
+  function applyHash(hash: string) {
+    const me = hash.match(/^#\/exercises\/(.+)$/);
+    if (me) { currentId = decodeURIComponent(me[1]); currentLessonSlug = null; return; }
+    const ml = hash.match(/^#\/lessons\/(.+)$/);
+    if (ml) { currentLessonSlug = decodeURIComponent(ml[1]); currentId = null; }
   }
 
   function navigate(id: string) {
     window.location.hash = `/exercises/${encodeURIComponent(id)}`;
     currentId = id;
+    currentLessonSlug = null;
+    sidebarOpen = false;
+  }
+
+  function navigateToLesson(slug: string) {
+    window.location.hash = `/lessons/${encodeURIComponent(slug)}`;
+    currentLessonSlug = slug;
+    currentId = null;
     sidebarOpen = false;
   }
 
@@ -84,10 +96,8 @@
   }
 
   onMount(async () => {
-    currentId = parseHash();
-    window.addEventListener('hashchange', () => {
-      currentId = parseHash();
-    });
+    applyHash(window.location.hash);
+    window.addEventListener('hashchange', () => applyHash(window.location.hash));
 
     await initClerk();
     clerkReady = true;
@@ -153,7 +163,9 @@
         {chapters}
         loading={loading}
         currentId={currentId ?? ''}
+        currentLessonSlug={currentLessonSlug ?? ''}
         onSelect={navigate}
+        onSelectLesson={navigateToLesson}
         avatarUrl={userAvatarUrl}
         displayName={userDisplayName}
         onSignOut={handleSignOut}
@@ -169,6 +181,11 @@
           <p class="error-msg">{fetchError}</p>
           <button class="retry-btn" onclick={loadExercises}>Retry</button>
         </div>
+      {:else if currentLessonSlug}
+        {@const lessonChapter = chapters.find(c => c.slug === currentLessonSlug)}
+        {#if lessonChapter}
+          <LessonPage title={lessonChapter.title} lesson={lessonChapter.lesson} />
+        {/if}
       {:else if currentExercise}
         <ExercisePage exercise={currentExercise} lesson={currentLesson} />
       {:else}

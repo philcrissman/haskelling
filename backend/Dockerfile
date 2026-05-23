@@ -50,15 +50,13 @@ RUN useradd -r -u 1001 -s /sbin/nologin haskelling
 WORKDIR /app
 COPY --from=builder /out/haskelling /app/haskelling
 
-# Bake the curriculum and lessons into the image so the server can seed on startup
-COPY CURRICULUM.json /app/CURRICULUM.json
-COPY curriculum/lessons/ /app/curriculum/lessons/
+# Bake the curriculum into the image so the server can seed on startup
+COPY curriculum/ /app/curriculum/
 
 USER haskelling
 
 ENV PORT=8080
-ENV CURRICULUM_PATH=/app/CURRICULUM.json
-ENV LESSONS_DIR=/app/curriculum/lessons
+ENV CURRICULUM_DIR=/app/curriculum
 EXPOSE 8080
 
 ENTRYPOINT ["/app/haskelling"]
