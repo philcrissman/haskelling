@@ -1,0 +1,10 @@
+{
+  "order": 1,
+  "title": "Hello, World!",
+  "learning_objective": "Define a function that returns a fixed String value.",
+  "hints": [
+    "A string literal in Haskell is written with double quotes.",
+    "Replace undefined with the string value the function should return.",
+    "Return the string \"Hello, World!\" exactly \u2014 note the comma and exclamation mark."
+  ]
+}

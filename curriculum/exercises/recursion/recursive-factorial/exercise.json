@@ -1,0 +1,10 @@
+{
+  "order": 1,
+  "title": "Recursive Factorial",
+  "learning_objective": "Implement a recursive function with a base case and a recursive case.",
+  "hints": [
+    "A recursive function needs a base case (to stop) and a recursive case (to call itself).",
+    "The base case: factorial 0 = 1.",
+    "The recursive case: n! = n \u00d7 (n-1)!  Write it as: factorial n = n * factorial (n - 1)."
+  ]
+}

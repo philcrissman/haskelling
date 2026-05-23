@@ -1,0 +1,10 @@
+{
+  "order": 4,
+  "title": "Boolean Comparison",
+  "learning_objective": "Use a comparison operator to return a Bool value.",
+  "hints": [
+    "Haskell comparison operators include <, >, <=, >=, == and /=.",
+    "A comparison expression evaluates to a Bool: True or False.",
+    "Use >= to check whether age is at least 18."
+  ]
+}

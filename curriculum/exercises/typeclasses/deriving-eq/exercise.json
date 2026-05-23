@@ -1,0 +1,10 @@
+{
+  "order": 2,
+  "title": "Deriving Eq",
+  "learning_objective": "Derive Eq to enable == on a custom type.",
+  "hints": [
+    "The == operator requires the type to have an Eq instance.",
+    "Add deriving (Eq) to the data declaration to get == for free.",
+    "Once Eq is derived, sameSuit a b = a == b works directly."
+  ]
+}

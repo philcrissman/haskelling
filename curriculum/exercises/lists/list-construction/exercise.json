@@ -1,0 +1,10 @@
+{
+  "order": 3,
+  "title": "Building Lists",
+  "learning_objective": "Prepend an element to a list using the (:) cons operator.",
+  "hints": [
+    "The : operator (pronounced 'cons') prepends a single element to a list.",
+    "x : xs puts x at the front of the list xs.",
+    "Note that : takes an element on the left and a list on the right \u2014 unlike ++ which takes two lists."
+  ]
+}

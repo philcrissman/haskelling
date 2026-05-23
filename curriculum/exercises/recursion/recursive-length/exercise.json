@@ -1,0 +1,10 @@
+{
+  "order": 3,
+  "title": "Recursive Length",
+  "learning_objective": "Compute the length of a list using recursion.",
+  "hints": [
+    "The length of an empty list is 0.",
+    "The length of a non-empty list is 1 plus the length of its tail.",
+    "You don't need the head value \u2014 use _ to ignore it: (_:xs)."
+  ]
+}

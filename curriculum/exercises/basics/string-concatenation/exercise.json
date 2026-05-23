@@ -1,0 +1,10 @@
+{
+  "order": 3,
+  "title": "Concatenate Strings",
+  "learning_objective": "Build a String by concatenating multiple string values using ++.",
+  "hints": [
+    "Strings in Haskell can be joined with the ++ operator.",
+    "You can chain multiple ++ operations: \"a\" ++ \"b\" ++ \"c\" gives \"abc\".",
+    "Join \"Hello, \", the name argument, and \"!\" using ++."
+  ]
+}

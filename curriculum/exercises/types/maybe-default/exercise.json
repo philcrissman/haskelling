@@ -1,0 +1,10 @@
+{
+  "order": 3,
+  "title": "Maybe with a Default",
+  "learning_objective": "Extract a value from a Maybe, supplying a default for the Nothing case.",
+  "hints": [
+    "fromMaybe takes a default value and a Maybe: fromMaybe default (Just x) gives x, fromMaybe default Nothing gives default.",
+    "The import for fromMaybe is already provided at the top of the file.",
+    "fromMaybe 0 applied to your Maybe Int gives either the wrapped value or 0."
+  ]
+}

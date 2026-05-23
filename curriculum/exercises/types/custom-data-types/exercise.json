@@ -1,0 +1,10 @@
+{
+  "order": 5,
+  "title": "Custom Data Types",
+  "learning_objective": "Define a sum type with data and pattern match on its constructors.",
+  "hints": [
+    "data defines a new type. Each option separated by | is a constructor: data Color = Red | Blue.",
+    "You can pattern match on constructors the same way you match on literals.",
+    "Write one equation per constructor \u2014 the compiler will warn if you miss one."
+  ]
+}

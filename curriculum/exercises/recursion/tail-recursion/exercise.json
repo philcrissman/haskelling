@@ -1,0 +1,10 @@
+{
+  "order": 5,
+  "title": "Tail Recursion with an Accumulator",
+  "learning_objective": "Use an accumulator argument to write a tail-recursive function.",
+  "hints": [
+    "The accumulator starts empty. Each recursive step moves the head of remaining into acc.",
+    "When remaining is empty, the accumulator holds the reversed list \u2014 return it.",
+    "go (x:xs) acc should call go xs (x:acc) \u2014 prepend x to acc and recurse on the tail."
+  ]
+}

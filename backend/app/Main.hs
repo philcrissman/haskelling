@@ -10,7 +10,7 @@ import Database.Persist.Sql (runMigration)
 import Judge0 (Judge0Config (..))
 import Network.Wai.Handler.Warp (run)
 import Schema (migrateAll)
-import Seed (seedFromFile)
+import Seed (seedFromDir)
 import Server (app, newRateLimiter)
 import System.Environment (lookupEnv)
 import System.Exit (die)
@@ -38,13 +38,10 @@ main = do
   putStrLn "haskelling: migrations applied"
 
   -- Seed
-  curriculumPath <- lookupEnv "CURRICULUM_PATH" >>= \case
+  curriculumDir <- lookupEnv "CURRICULUM_DIR" >>= \case
     Just p  -> pure p
-    Nothing -> pure "../CURRICULUM.json"
-  lessonsDir <- lookupEnv "LESSONS_DIR" >>= \case
-    Just p  -> pure p
-    Nothing -> pure "../curriculum/lessons"
-  seedFromFile curriculumPath lessonsDir pool
+    Nothing -> pure "../curriculum"
+  seedFromDir curriculumDir pool
 
   -- Judge0
   judge0Cfg <- do

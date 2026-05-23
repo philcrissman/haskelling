@@ -1,11 +1,11 @@
 module Seed where
 
 import Control.Exception (SomeException, try)
-import Control.Monad (forM, forM_)
+import Control.Monad (filterM, forM, forM_)
 import Control.Monad.IO.Class (liftIO)
 import Data.Aeson (FromJSON (..), eitherDecode, withObject, (.:))
 import Data.ByteString.Lazy qualified as BSL
-import Data.List (nubBy)
+import Data.List (nubBy, sortOn)
 import Data.Map.Strict qualified as Map
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -15,14 +15,42 @@ import Database.Persist (Entity (..), getBy, insert, insert_, update, (=.))
 import Database.Persist.Postgresql (ConnectionPool, runSqlPool)
 import Database.Persist.Sql (SqlPersistT)
 import Schema
+import System.Directory (doesDirectoryExist, listDirectory)
 import System.Exit (die)
+import System.FilePath ((</>))
 
--- Parsing CURRICULUM.json
+-- exercise.json (per exercise directory)
+
+data ExerciseMeta = ExerciseMeta
+  { emOrder             :: Int
+  , emTitle             :: Text
+  , emLearningObjective :: Text
+  , emHints             :: [Text]
+  }
+
+instance FromJSON ExerciseMeta where
+  parseJSON = withObject "ExerciseMeta" $ \o ->
+    ExerciseMeta
+      <$> o .: "order"
+      <*> o .: "title"
+      <*> o .: "learning_objective"
+      <*> o .: "hints"
+
+-- chapter.json (per chapter directory)
+
+newtype ChapterOrder = ChapterOrder { coOrder :: Int }
+
+instance FromJSON ChapterOrder where
+  parseJSON = withObject "ChapterOrder" $ \o ->
+    ChapterOrder <$> o .: "order"
+
+-- In-memory exercise record assembled from files
 
 data CurriculumExercise = CurriculumExercise
   { ceId                :: Text
   , ceTitle             :: Text
   , ceChapter           :: Text
+  , ceChapterOrder      :: Int
   , ceOrder             :: Int
   , ceLearningObjective :: Text
   , ceStubCode          :: Text
@@ -31,19 +59,6 @@ data CurriculumExercise = CurriculumExercise
   , ceHints             :: [Text]
   }
   deriving (Show)
-
-instance FromJSON CurriculumExercise where
-  parseJSON = withObject "CurriculumExercise" $ \o ->
-    CurriculumExercise
-      <$> o .: "id"
-      <*> o .: "title"
-      <*> o .: "chapter"
-      <*> o .: "order"
-      <*> o .: "learning_objective"
-      <*> o .: "stub_code"
-      <*> o .: "hidden_test_suite"
-      <*> o .: "canonical_solution"
-      <*> o .: "hints"
 
 -- Chapter metadata: (title, description)
 
@@ -65,6 +80,43 @@ readLesson lessonsDir slug = do
   result <- try (TIO.readFile path) :: IO (Either SomeException Text)
   pure $ either (const "") id result
 
+-- Load all exercises from curriculum/exercises/
+
+loadExercisesFromDir :: FilePath -> IO [CurriculumExercise]
+loadExercisesFromDir curriculumDir = do
+  let exercisesDir = curriculumDir </> "exercises"
+  chapterSlugs <- listDirectory exercisesDir
+                    >>= filterM (\d -> doesDirectoryExist (exercisesDir </> d))
+  fmap concat $ forM chapterSlugs $ \chSlug -> do
+    let chDir = exercisesDir </> chSlug
+    chOrderBytes <- BSL.readFile (chDir </> "chapter.json")
+    chOrder <- case eitherDecode chOrderBytes of
+      Left err -> die $ "Failed to parse chapter.json in " <> chDir <> ": " <> err
+      Right co -> pure (coOrder co)
+    exerciseSlugs <- listDirectory chDir
+                       >>= filterM (\d -> doesDirectoryExist (chDir </> d))
+    forM exerciseSlugs $ \exSlug -> do
+      let exDir = chDir </> exSlug
+      metaBytes <- BSL.readFile (exDir </> "exercise.json")
+      meta <- case eitherDecode metaBytes of
+        Left err -> die $ "Failed to parse exercise.json in " <> exDir <> ": " <> err
+        Right m  -> pure m
+      stub     <- TIO.readFile (exDir </> "stub.hs")
+      tests    <- TIO.readFile (exDir </> "tests.hs")
+      solution <- TIO.readFile (exDir </> "solution.hs")
+      pure CurriculumExercise
+        { ceId                = T.pack exSlug
+        , ceTitle             = emTitle meta
+        , ceChapter           = T.pack chSlug
+        , ceChapterOrder      = chOrder
+        , ceOrder             = emOrder meta
+        , ceLearningObjective = emLearningObjective meta
+        , ceStubCode          = stub
+        , ceHiddenTestSuite   = tests
+        , ceCanonicalSolution = solution
+        , ceHints             = emHints meta
+        }
+
 -- Upsert helpers
 
 upsertChapter :: Text -> Text -> Text -> Text -> Int -> SqlPersistT IO ChapterId
@@ -75,9 +127,9 @@ upsertChapter slug title desc lesson orderNum = do
       insert (Chapter slug title desc lesson orderNum)
     Just (Entity key _) -> do
       update key
-        [ ChapterTitle   =. title
+        [ ChapterTitle    =. title
         , ChapterDescription =. desc
-        , ChapterLesson  =. lesson
+        , ChapterLesson   =. lesson
         , ChapterOrderNum =. orderNum
         ]
       pure key
@@ -120,11 +172,12 @@ upsertExercise ce chapterId now = do
 seedAll :: FilePath -> [CurriculumExercise] -> UTCTime -> SqlPersistT IO ()
 seedAll lessonsDir exercises now = do
   let uniqueChapters =
-        zip [1 ..] $
-          nubBy (\a b -> ceChapter a == ceChapter b) exercises
+        nubBy (\a b -> ceChapter a == ceChapter b) $
+          sortOn ceChapterOrder exercises
 
-  chapterIds <- Map.fromList <$> forM uniqueChapters (\(orderNum, ex) -> do
-    let slug = ceChapter ex
+  chapterIds <- Map.fromList <$> forM uniqueChapters (\ex -> do
+    let slug     = ceChapter ex
+        orderNum = ceChapterOrder ex
         (title, desc) = chapterMeta slug
     lesson <- liftIO $ readLesson lessonsDir slug
     key <- upsertChapter slug title desc lesson orderNum
@@ -135,12 +188,10 @@ seedAll lessonsDir exercises now = do
 
 -- Entry point
 
-seedFromFile :: FilePath -> FilePath -> ConnectionPool -> IO ()
-seedFromFile curriculumPath lessonsDir pool = do
-  content <- BSL.readFile curriculumPath
-  exercises <- case eitherDecode content of
-    Left err -> die $ "Failed to parse CURRICULUM.json: " <> err
-    Right xs -> pure xs
+seedFromDir :: FilePath -> ConnectionPool -> IO ()
+seedFromDir curriculumDir pool = do
+  exercises <- loadExercisesFromDir curriculumDir
+  let lessonsDir = curriculumDir </> "lessons"
   now <- getCurrentTime
   runSqlPool (seedAll lessonsDir exercises now) pool
   putStrLn $ "haskelling: seeded " <> show (length exercises) <> " exercises"

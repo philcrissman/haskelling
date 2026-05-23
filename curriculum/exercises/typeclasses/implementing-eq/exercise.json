@@ -1,0 +1,10 @@
+{
+  "order": 4,
+  "title": "Implementing Eq",
+  "learning_objective": "Write a manual Eq instance by implementing ==.",
+  "hints": [
+    "Implement == by pattern matching on both Point values to extract their coordinates.",
+    "(==) (Point x1 y1) (Point x2 y2) = ... binds both points' fields.",
+    "Two Points are equal if x1 == x2 AND y1 == y2. Haskell derives /= automatically from ==."
+  ]
+}

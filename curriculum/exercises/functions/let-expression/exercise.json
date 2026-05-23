@@ -1,0 +1,10 @@
+{
+  "order": 3,
+  "title": "Let Expressions",
+  "learning_objective": "Use a let...in expression to bind local names inside an expression.",
+  "hints": [
+    "let <bindings> in <expression> introduces local names scoped to that expression.",
+    "Compute the area first: let area = w * h",
+    "Then use it: in area * 2"
+  ]
+}

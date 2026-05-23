@@ -1,0 +1,10 @@
+{
+  "order": 4,
+  "title": "Tuples",
+  "learning_objective": "Construct and destructure a 2-tuple by pattern matching.",
+  "hints": [
+    "A tuple groups values of potentially different types: (Int, String) is a valid type.",
+    "You can pattern match on the pair directly in the argument: swap (x, y) = ...",
+    "Build the result by reversing the order: (y, x)."
+  ]
+}

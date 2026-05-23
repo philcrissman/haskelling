@@ -1,0 +1,10 @@
+{
+  "order": 2,
+  "title": "List Ranges",
+  "learning_objective": "Create a list of integers using Haskell range syntax.",
+  "hints": [
+    "Haskell range syntax [a..b] generates a list from a to b inclusive.",
+    "You can use a variable in a range expression.",
+    "[1..n] produces the list [1, 2, 3, ..., n]. If n < 1 it produces []."
+  ]
+}

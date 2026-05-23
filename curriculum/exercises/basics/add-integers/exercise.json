@@ -1,0 +1,10 @@
+{
+  "order": 2,
+  "title": "Add Two Integers",
+  "learning_objective": "Define a function that takes two Int arguments and returns their sum.",
+  "hints": [
+    "Functions in Haskell return the value of the last expression in their body.",
+    "The + operator works on Int values.",
+    "Replace undefined with an expression that combines x and y."
+  ]
+}

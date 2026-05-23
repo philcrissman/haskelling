@@ -1,0 +1,10 @@
+{
+  "order": 4,
+  "title": "Recursive Reverse",
+  "learning_objective": "Reverse a list using recursion and list concatenation.",
+  "hints": [
+    "The reverse of an empty list is an empty list.",
+    "To reverse (x:xs), reverse xs first and then put x at the end.",
+    "To put x at the end, append the single-element list [x] using ++."
+  ]
+}
