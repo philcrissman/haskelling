@@ -43,3 +43,7 @@ frontend/build/
 .idea/
 *.swp
 *.swo
+
+# Claude Code working files
+.claude/
+memory/
