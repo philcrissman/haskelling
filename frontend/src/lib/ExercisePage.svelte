@@ -24,21 +24,28 @@
 
   const storageKey = $derived(`haskelling:code:${exercise.id}`);
 
+  let lastExerciseId = '';
+
   $effect.pre(() => {
-    const saved = localStorage.getItem(`haskelling:code:${exercise.id}`);
-    code = saved ?? exercise.stubCode;
+    const id = exercise.id;
+    if (id === lastExerciseId) return;
+    lastExerciseId = id;
+
+    const raw = localStorage.getItem(`haskelling:code:${id}`);
+    const hasUserCode = raw !== null && raw !== '' && raw !== exercise.stubCode;
+    code = hasUserCode ? raw : exercise.stubCode;
     result = null;
     hintsRevealed = 0;
     history = [];
     historyVisible = false;
-    if (!saved) restoreFromHistory(exercise.id, exercise.stubCode);
+    if (!hasUserCode) restoreFromHistory(id, exercise.stubCode);
   });
 
   async function restoreFromHistory(exerciseId: string, stubCode: string) {
     try {
       const resp = await getHistory(exerciseId);
       const latest = resp.submissions[0];
-      if (latest && exercise.id === exerciseId && code === stubCode) {
+      if (latest?.code && exercise.id === exerciseId && code === stubCode) {
         code = latest.code;
         localStorage.setItem(`haskelling:code:${exerciseId}`, latest.code);
       }
@@ -46,10 +53,6 @@
       // unauthenticated or no history — fall back to stub silently
     }
   }
-
-  $effect(() => {
-    localStorage.setItem(storageKey, code);
-  });
 
   async function handleSubmit() {
     if (submitting) return;
@@ -168,7 +171,7 @@
     </header>
 
     <div class="editor-area">
-      <CodeEditor value={code} onChange={(v) => { code = v; }} readOnly={submitting} />
+      <CodeEditor value={code} onChange={(v) => { code = v; localStorage.setItem(storageKey, v); }} readOnly={submitting} />
     </div>
 
     <div class="actions">
@@ -274,7 +277,7 @@
   .exercise-page {
     max-width: 860px;
     margin: 0 auto;
-    padding: 2rem 1.5rem;
+    padding: 2.25rem 1.75rem;
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
@@ -284,81 +287,66 @@
 
   .tab-bar {
     display: flex;
-    border-bottom: 2px solid #e5e5e5;
+    border-bottom: 1px solid var(--border);
     gap: 0;
     margin-bottom: -0.5rem;
   }
 
-  @media (prefers-color-scheme: dark) {
-    .tab-bar { border-bottom-color: #333; }
-  }
-
   .tab-btn {
     padding: 0.5rem 1.25rem;
-    font-size: 0.9rem;
-    font-weight: 500;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    font-weight: 400;
     background: none;
     border: none;
     border-bottom: 2px solid transparent;
-    margin-bottom: -2px;
-    color: #666;
+    margin-bottom: -1px;
+    color: var(--text-3);
     cursor: pointer;
+    transition: color 0.1s;
   }
 
-  .tab-btn:hover { color: #333; }
-  .tab-btn.active { color: #6d28d9; border-bottom-color: #6d28d9; }
-
-  @media (prefers-color-scheme: dark) {
-    .tab-btn { color: #999; }
-    .tab-btn:hover { color: #ddd; }
-    .tab-btn.active { color: #a78bfa; border-bottom-color: #a78bfa; }
-  }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active { color: var(--brand); border-bottom-color: var(--brand-border); }
 
   /* Lesson panel */
 
-  .lesson-panel {
-    padding-top: 0.5rem;
-  }
+  .lesson-panel { padding-top: 0.5rem; }
 
   .prose :global(h1),
   .prose :global(h2),
   .prose :global(h3) {
+    font-family: var(--font-display);
     margin: 1.5em 0 0.5em;
-    font-weight: 600;
   }
 
   .prose :global(h1) { font-size: 1.5rem; }
   .prose :global(h2) { font-size: 1.2rem; }
   .prose :global(h3) { font-size: 1rem; }
-
-  .prose :global(p) { margin: 0 0 1em; line-height: 1.7; }
+  .prose :global(p)  { margin: 0 0 1em; line-height: 1.75; }
 
   .prose :global(pre) {
-    background: #f4f4f5;
+    background: var(--bg-code);
     padding: 0.75rem 1rem;
-    border-radius: 6px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
     overflow-x: auto;
     font-size: 0.85rem;
     line-height: 1.6;
     margin: 0 0 1em;
   }
 
-  .prose :global(code) {
-    font-family: 'Fira Code', 'Cascadia Code', Menlo, monospace;
-  }
+  .prose :global(code) { font-family: var(--font-mono); }
 
   .prose :global(:not(pre) > code) {
-    background: #f4f4f5;
+    background: var(--bg-code);
     padding: 0.15em 0.35em;
-    border-radius: 3px;
+    border-radius: var(--radius-sm);
     font-size: 0.88em;
   }
 
   .prose :global(ul),
-  .prose :global(ol) {
-    padding-left: 1.5rem;
-    margin: 0 0 1em;
-  }
+  .prose :global(ol) { padding-left: 1.5rem; margin: 0 0 1em; }
 
   .prose :global(li) { margin: 0.25em 0; }
 
@@ -372,83 +360,73 @@
   .prose :global(th),
   .prose :global(td) {
     padding: 0.4rem 0.75rem;
-    border: 1px solid #e5e5e5;
+    border: 1px solid var(--border);
     text-align: left;
   }
 
-  .prose :global(th) { background: #f9f9f9; font-weight: 600; }
-
-  @media (prefers-color-scheme: dark) {
-    .prose :global(pre) { background: #1e1e1e; }
-    .prose :global(:not(pre) > code) { background: #2a2a2a; }
-    .prose :global(th) { background: #222; }
-    .prose :global(th),
-    .prose :global(td) { border-color: #333; }
-  }
+  .prose :global(th) { background: var(--bg-subtle); font-weight: 500; }
 
   /* Exercise header */
 
   .exercise-header {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.4rem;
   }
 
   h1 {
-    font-size: 1.5rem;
-    font-weight: 600;
+    font-family: var(--font-display);
+    font-size: 1.6rem;
+    font-weight: 700;
     margin: 0;
+    line-height: 1.15;
   }
 
   .learning-objective {
     margin: 0;
-    color: #555;
-    font-size: 0.95rem;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    .learning-objective { color: #aaa; }
+    color: var(--text-2);
+    font-size: 0.925rem;
+    font-style: italic;
   }
 
   .editor-area :global(.editor) { min-height: 240px; }
 
   /* Submit */
 
-  .actions {
-    display: flex;
-    justify-content: flex-end;
-  }
+  .actions { display: flex; justify-content: flex-end; }
 
   .submit-btn {
     padding: 0.5rem 1.5rem;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     font-weight: 500;
+    font-family: var(--font-sans);
     border: none;
-    border-radius: 4px;
-    background: #6d28d9;
+    border-radius: var(--radius-md);
+    background: var(--brand);
     color: #fff;
     cursor: pointer;
     min-width: 8rem;
+    letter-spacing: 0.01em;
+    transition: background 0.1s;
   }
 
-  .submit-btn:hover:not(:disabled) { background: #5b21b6; }
-  .submit-btn:disabled { opacity: 0.65; cursor: not-allowed; }
-  .submit-btn:focus-visible { outline: 2px solid #6d28d9; outline-offset: 2px; }
+  .submit-btn:hover:not(:disabled) { background: var(--brand-hover); }
+  .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
   .shortcut-hint {
     margin-left: 0.5rem;
-    font-family: inherit;
-    font-size: 0.78rem;
-    opacity: 0.7;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    opacity: 0.65;
     background: rgba(255,255,255,0.15);
-    border-radius: 3px;
+    border-radius: var(--radius-sm);
     padding: 0.1em 0.35em;
   }
 
   /* Result panel */
 
   .result {
-    border-radius: 6px;
+    border-radius: var(--radius-md);
     border: 1px solid transparent;
     padding: 1rem 1.25rem;
     display: flex;
@@ -456,30 +434,21 @@
     gap: 0.75rem;
   }
 
-  .result--pass { background: #f0fdf4; border-color: #86efac; }
+  .result--pass                                    { background: var(--pass-bg); border-color: var(--pass-border); }
   .result--fail,
   .result--compile_error,
   .result--runtime_error,
-  .result--error { background: #fff1f2; border-color: #fda4af; }
-  .result--timeout { background: #fffbeb; border-color: #fcd34d; }
-
-  @media (prefers-color-scheme: dark) {
-    .result--pass          { background: #052e16; border-color: #166534; }
-    .result--fail,
-    .result--compile_error,
-    .result--runtime_error,
-    .result--error         { background: #2d0a0f; border-color: #9f1239; }
-    .result--timeout       { background: #1c1500; border-color: #92400e; }
-  }
+  .result--error                                   { background: var(--fail-bg); border-color: var(--fail-border); }
+  .result--timeout                                 { background: var(--warn-bg); border-color: var(--warn-border); }
 
   .result-header { display: flex; align-items: center; gap: 1rem; }
-  .result-badge { font-weight: 600; font-size: 0.9rem; }
-  .result-counts { font-size: 0.85rem; opacity: 0.8; }
+  .result-badge  { font-weight: 600; font-size: 0.875rem; }
+  .result-counts { font-size: 0.82rem; opacity: 0.8; }
 
   .result-output {
     margin: 0;
-    font-family: ui-monospace, Consolas, monospace;
-    font-size: 0.82rem;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
     line-height: 1.6;
     white-space: pre-wrap;
     word-break: break-word;
@@ -496,33 +465,26 @@
     flex-direction: column;
     gap: 0.5rem;
     padding: 1rem 1.25rem;
-    background: #fafaf5;
-    border: 1px solid #e8e5d0;
-    border-radius: 6px;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    .hints-section { background: #1a1a10; border-color: #3a3820; }
+    background: var(--hints-bg);
+    border: 1px solid var(--hints-border);
+    border-radius: var(--radius-md);
   }
 
   .hints-label {
-    font-size: 0.78rem;
-    font-weight: 600;
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    font-weight: 500;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: #888;
+    letter-spacing: 0.14em;
+    color: var(--text-3);
   }
 
   .hints-list {
     margin: 0.25rem 0 0;
     padding-left: 1.25rem;
     font-size: 0.9rem;
-    line-height: 1.6;
-    color: #444;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    .hints-list { color: #bbb; }
+    line-height: 1.65;
+    color: var(--text-4);
   }
 
   .hint-btn {
@@ -530,32 +492,22 @@
     align-items: center;
     gap: 0.5rem;
     align-self: flex-start;
-    padding: 0.35rem 0.75rem;
-    font-size: 0.85rem;
-    background: #fff;
-    border: 1px solid #d4d0b8;
-    border-radius: 4px;
+    padding: 0.3rem 0.75rem;
+    font-size: 0.82rem;
+    font-family: var(--font-sans);
+    background: var(--hints-btn-bg);
+    border: 1px solid var(--hints-btn-border);
+    border-radius: var(--radius-sm);
     cursor: pointer;
-    color: #555;
+    color: var(--text-2);
+    transition: background 0.1s;
   }
 
-  .hint-btn:hover { background: #f5f3e7; }
+  .hint-btn:hover { background: var(--hints-btn-hover); }
 
-  @media (prefers-color-scheme: dark) {
-    .hint-btn { background: #222; border-color: #3a3820; color: #aaa; }
-    .hint-btn:hover { background: #2a2a18; }
-  }
+  .hint-count { font-size: 0.72rem; opacity: 0.6; }
 
-  .hint-count {
-    font-size: 0.75rem;
-    opacity: 0.6;
-  }
-
-  .no-more-hints {
-    margin: 0;
-    font-size: 0.85rem;
-    color: #888;
-  }
+  .no-more-hints { margin: 0; font-size: 0.85rem; color: var(--text-3); }
 
   /* History */
 
@@ -564,11 +516,7 @@
     flex-direction: column;
     gap: 0.75rem;
     padding-top: 0.5rem;
-    border-top: 1px solid #e5e5e5;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    .history-section { border-top-color: #333; }
+    border-top: 1px solid var(--border);
   }
 
   .history-toggle {
@@ -577,84 +525,65 @@
     gap: 0.4rem;
     background: none;
     border: none;
-    font-size: 0.88rem;
-    font-weight: 500;
-    color: #555;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-3);
     cursor: pointer;
     padding: 0;
+    transition: color 0.1s;
   }
 
-  .history-toggle:hover { color: #333; }
-
-  @media (prefers-color-scheme: dark) {
-    .history-toggle { color: #999; }
-    .history-toggle:hover { color: #ddd; }
-  }
+  .history-toggle:hover { color: var(--text-2); }
 
   .history-body { overflow-x: auto; }
 
   .history-loading,
-  .history-empty {
-    font-size: 0.875rem;
-    color: #888;
-    margin: 0;
-  }
+  .history-empty { font-size: 0.875rem; color: var(--text-3); margin: 0; }
 
   .history-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.85rem;
+    font-size: 0.82rem;
   }
 
   .history-table th {
     text-align: left;
-    padding: 0.4rem 0.75rem;
-    border-bottom: 1px solid #e5e5e5;
-    color: #888;
+    padding: 0.35rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-3);
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
     font-weight: 500;
-    font-size: 0.78rem;
     text-transform: uppercase;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.1em;
   }
 
   .history-table td {
     padding: 0.4rem 0.75rem;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid var(--border-subtle);
     vertical-align: middle;
   }
 
-  @media (prefers-color-scheme: dark) {
-    .history-table th { border-bottom-color: #333; color: #666; }
-    .history-table td { border-bottom-color: #222; }
-  }
-
-  .history-date { color: #666; white-space: nowrap; }
-
-  @media (prefers-color-scheme: dark) {
-    .history-date { color: #999; }
-  }
+  .history-date { color: var(--text-3); white-space: nowrap; }
 
   .status-badge {
     display: inline-block;
     padding: 0.15em 0.5em;
-    border-radius: 3px;
-    font-size: 0.78rem;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
     font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
   }
 
-  .status-badge--pass { background: #dcfce7; color: #166534; }
-  .status-badge--fail { background: #fee2e2; color: #991b1b; }
-  .status-badge--compile_error { background: #fee2e2; color: #991b1b; }
-  .status-badge--timeout { background: #fef3c7; color: #92400e; }
-  .status-badge--runtime_error { background: #fee2e2; color: #991b1b; }
-  .status-badge--error { background: #fee2e2; color: #991b1b; }
-
-  @media (prefers-color-scheme: dark) {
-    .status-badge--pass { background: #052e16; color: #86efac; }
-    .status-badge--fail,
-    .status-badge--compile_error,
-    .status-badge--runtime_error,
-    .status-badge--error { background: #2d0a0f; color: #fda4af; }
-    .status-badge--timeout { background: #1c1500; color: #fcd34d; }
-  }
+  .status-badge--pass                                           { background: var(--badge-pass-bg); color: var(--badge-pass-text); }
+  .status-badge--fail,
+  .status-badge--compile_error,
+  .status-badge--runtime_error,
+  .status-badge--error                                          { background: var(--badge-fail-bg); color: var(--badge-fail-text); }
+  .status-badge--timeout                                        { background: var(--badge-warn-bg); color: var(--badge-warn-text); }
 </style>

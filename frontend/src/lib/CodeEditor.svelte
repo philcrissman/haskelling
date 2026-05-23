@@ -2,10 +2,12 @@
   import { untrack } from 'svelte';
   import { basicSetup } from 'codemirror';
   import { EditorView, keymap } from '@codemirror/view';
-  import { EditorState, Prec } from '@codemirror/state';
+  import { EditorState, Prec, Annotation } from '@codemirror/state';
   import { StreamLanguage } from '@codemirror/language';
   import { haskell } from '@codemirror/legacy-modes/mode/haskell';
   import { oneDark } from '@codemirror/theme-one-dark';
+
+  const setProgrammatically = Annotation.define<boolean>();
 
   interface Props {
     value: string;
@@ -48,7 +50,7 @@
             }])
           ),
           EditorView.updateListener.of((update) => {
-            if (update.docChanged) {
+            if (update.docChanged && !update.transactions.some(tr => tr.annotation(setProgrammatically))) {
               onChange(update.state.doc.toString());
             }
           }),
@@ -72,6 +74,7 @@
     if (current !== incoming) {
       view.dispatch({
         changes: { from: 0, to: current.length, insert: incoming },
+        annotations: setProgrammatically.of(true),
       });
     }
   });
@@ -81,8 +84,8 @@
 
 <style>
   .editor {
-    border: 1px solid #ccc;
-    border-radius: 4px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
     overflow: hidden;
   }
 
