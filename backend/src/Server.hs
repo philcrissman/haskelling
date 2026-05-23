@@ -120,7 +120,7 @@ toChapterResponse (Entity _ ch) exs = ChapterResponse
   { chapterSlug        = Schema.chapterSlug ch
   , chapterTitle       = Schema.chapterTitle ch
   , chapterDescription = Schema.chapterDescription ch
-  , chapterLesson      = Schema.chapterLesson ch
+  , chapterLesson      = maybe "" id (Schema.chapterLesson ch)
   , chapterExercises   = map (toExerciseClient (Schema.chapterSlug ch)) exs
   }
 

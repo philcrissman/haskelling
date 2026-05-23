@@ -76,7 +76,7 @@ Chapter
   slug        Text
   title       Text
   description Text
-  lesson      Text
+  lesson      Text Maybe
   orderNum    Int
   UniqueChapterSlug slug
   deriving Show Eq

@@ -119,7 +119,7 @@ loadExercisesFromDir curriculumDir = do
 
 -- Upsert helpers
 
-upsertChapter :: Text -> Text -> Text -> Text -> Int -> SqlPersistT IO ChapterId
+upsertChapter :: Text -> Text -> Text -> Maybe Text -> Int -> SqlPersistT IO ChapterId
 upsertChapter slug title desc lesson orderNum = do
   mExisting <- getBy (UniqueChapterSlug slug)
   case mExisting of
@@ -179,7 +179,8 @@ seedAll lessonsDir exercises now = do
     let slug     = ceChapter ex
         orderNum = ceChapterOrder ex
         (title, desc) = chapterMeta slug
-    lesson <- liftIO $ readLesson lessonsDir slug
+    rawLesson <- liftIO $ readLesson lessonsDir slug
+    let lesson = if T.null rawLesson then Nothing else Just rawLesson
     key <- upsertChapter slug title desc lesson orderNum
     pure (slug, key))
 
