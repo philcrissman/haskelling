@@ -12,7 +12,7 @@
   --paper:      #f5f0e8;
   --aged:       #e3dcc8;
   --ink:        #1a1714;
-  --muted:      #7a7060;
+  --muted:      #665545;
   --light-rule: #d5cdb8;
   --rust:       #8b3a1e;
   --slate:      #3d4a5c;
@@ -105,7 +105,7 @@
 
     --text:   #e8e3d8;
     --text-2: #bdb5a8;
-    --text-3: #8a8070;
+    --text-3: #9a9080;
     --text-4: #ccc4b8;
 
     --pass-bg:         #052e16;
@@ -202,4 +202,16 @@ p {
 :focus-visible {
   outline: 2px solid var(--brand);
   outline-offset: 2px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border-width: 0;
 }

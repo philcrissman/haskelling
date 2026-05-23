@@ -140,19 +140,29 @@
 
 <svelte:window onkeydown={onKeydown} />
 
+<div class="sr-only" aria-live="polite" aria-atomic="true">
+  {#if result}
+    {statusLabel[result.status] ?? result.status}{result.status === 'pass' || result.status === 'fail' ? ` — ${result.passedCount} passed, ${result.failedCount} failed` : ''}
+  {/if}
+</div>
+
 <div class="exercise-page">
   {#if lesson}
-    <div class="tab-bar" role="tablist">
+    <div class="tab-bar" role="tablist" aria-label="View">
       <button
+        id="tab-btn-exercise"
         role="tab"
         aria-selected={activeTab === 'exercise'}
+        aria-controls="tab-panel-exercise"
         class="tab-btn"
         class:active={activeTab === 'exercise'}
         onclick={() => activeTab = 'exercise'}
       >Exercise</button>
       <button
+        id="tab-btn-lesson"
         role="tab"
         aria-selected={activeTab === 'lesson'}
+        aria-controls="tab-panel-lesson"
         class="tab-btn"
         class:active={activeTab === 'lesson'}
         onclick={() => activeTab = 'lesson'}
@@ -161,10 +171,11 @@
   {/if}
 
   {#if activeTab === 'lesson' && lesson}
-    <div class="lesson-panel prose">
+    <div id="tab-panel-lesson" role="tabpanel" aria-labelledby="tab-btn-lesson" class="lesson-panel prose">
       {@html lessonHtml}
     </div>
   {:else}
+    <div id="tab-panel-exercise" role={lesson ? 'tabpanel' : undefined} aria-labelledby={lesson ? 'tab-btn-exercise' : undefined}>
     <header class="exercise-header">
       <h1>{exercise.title}</h1>
       <p class="learning-objective">{exercise.learningObjective}</p>
@@ -211,7 +222,7 @@
 
     {#if exercise.hints.length > 0}
       <div class="hints-section">
-        <div class="hints-label">Hints</div>
+        <h2 class="hints-label">Hints</h2>
         {#if hintsRevealed > 0}
           <ol class="hints-list">
             {#each exercise.hints.slice(0, hintsRevealed) as hint}
@@ -231,7 +242,7 @@
     {/if}
 
     <div class="history-section">
-      <button class="history-toggle" onclick={toggleHistory}>
+      <button class="history-toggle" onclick={toggleHistory} aria-expanded={historyVisible}>
         {historyVisible ? '▾' : '▸'}
         Submission history
       </button>
@@ -270,6 +281,7 @@
         </div>
       {/if}
     </div>
+    </div><!-- /tab-panel-exercise -->
   {/if}
 </div>
 
@@ -506,7 +518,7 @@
 
   .hint-btn:hover { background: var(--hints-btn-hover); }
 
-  .hint-count { font-size: 0.72rem; opacity: 0.6; }
+  .hint-count { font-size: 0.72rem; color: var(--text-3); }
 
   .no-more-hints { margin: 0; font-size: 0.85rem; color: var(--text-3); }
 

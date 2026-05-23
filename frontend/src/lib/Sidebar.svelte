@@ -16,7 +16,7 @@
   const { chapters, loading = false, currentId, onSelect, avatarUrl, displayName, onSignOut, theme, onToggleTheme }: Props = $props();
 </script>
 
-<nav class="sidebar">
+<nav class="sidebar" aria-label="Exercise navigation">
   <div class="sidebar-header">
     <span class="site-title">haskelling</span>
     <span class="site-tagline">Learn Haskell by doing</span>
@@ -45,6 +45,7 @@
                 href="#{`/exercises/${exercise.id}`}"
                 class="exercise-link"
                 class:active={exercise.id === currentId}
+                aria-current={exercise.id === currentId ? 'page' : undefined}
                 onclick={(e) => { e.preventDefault(); onSelect(exercise.id); }}
               >
                 {exercise.title}
@@ -59,17 +60,19 @@
 
   <div class="user-footer">
     {#if avatarUrl}
-      <img src={avatarUrl} alt="avatar" class="user-avatar" />
+      <img src={avatarUrl} alt={displayName} class="user-avatar" />
     {:else}
       <div class="user-avatar user-avatar--placeholder">
         {displayName.charAt(0).toUpperCase()}
       </div>
     {/if}
     <span class="user-name">{displayName}</span>
-    <button class="theme-btn" onclick={onToggleTheme} title="Toggle light/dark mode">
-      {theme === 'dark' ? '☀' : '☾'}
-    </button>
-    <button class="sign-out-btn" onclick={onSignOut} title="Sign out">↩</button>
+    <button
+      class="theme-btn"
+      onclick={onToggleTheme}
+      aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+    >{theme === 'dark' ? '☀' : '☾'}</button>
+    <button class="sign-out-btn" onclick={onSignOut} aria-label="Sign out">↩</button>
   </div>
 </nav>
 

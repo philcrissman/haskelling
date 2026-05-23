@@ -133,15 +133,22 @@
   </div>
 
 {:else}
+  <a href="#main-content" class="skip-link">Skip to main content</a>
   <div class="app-layout">
     <div class="mobile-header">
-      <button class="menu-btn" onclick={() => sidebarOpen = !sidebarOpen} aria-label="Toggle navigation">☰</button>
+      <button
+        class="menu-btn"
+        onclick={() => sidebarOpen = !sidebarOpen}
+        aria-label="Toggle navigation"
+        aria-expanded={sidebarOpen}
+        aria-controls="sidebar-nav"
+      >☰</button>
       <span class="mobile-brand">haskelling</span>
     </div>
     {#if sidebarOpen}
       <div class="sidebar-backdrop" onclick={() => sidebarOpen = false} aria-hidden="true"></div>
     {/if}
-    <aside class="sidebar-container" class:open={sidebarOpen}>
+    <aside id="sidebar-nav" class="sidebar-container" class:open={sidebarOpen}>
       <Sidebar
         {chapters}
         loading={loading}
@@ -154,7 +161,7 @@
         onToggleTheme={toggleTheme}
       />
     </aside>
-    <main class="main-content">
+    <main id="main-content" class="main-content">
       {#if loading}
         <div class="app-state"><span class="spinner"></span></div>
       {:else if fetchError}
@@ -172,6 +179,24 @@
 {/if}
 
 <style>
+  .skip-link {
+    position: absolute;
+    top: -100%;
+    left: 0.5rem;
+    z-index: 9999;
+    padding: 0.4rem 0.9rem;
+    background: var(--brand);
+    color: #fff;
+    border-radius: var(--radius-md);
+    font-size: 0.875rem;
+    text-decoration: none;
+    transition: top 0.1s;
+  }
+
+  .skip-link:focus {
+    top: 0.5rem;
+  }
+
   .app-layout {
     display: flex;
     height: 100dvh;
