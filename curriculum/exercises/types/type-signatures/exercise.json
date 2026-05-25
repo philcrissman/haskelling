@@ -5,6 +5,7 @@
   "hints": [
     "A type signature is written on the line above the function: functionName :: Type.",
     "Arrow -> separates argument types and the return type: String -> String -> String.",
-    "This function takes two Strings and returns a String \u2014 join them with a space using ++."
-  ]
+    "This function takes two Strings and returns a String — join them with a space using ++."
+  ],
+  "date_added": null
 }

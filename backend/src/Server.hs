@@ -22,7 +22,7 @@ import Data.Ord (comparing)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Time (UTCTime, diffUTCTime, getCurrentTime)
-import Database.Persist (Entity (..), SelectOpt (..), get, getBy, insert, insert_, selectList, update, (==.), (=.))
+import Database.Persist (Entity (..), SelectOpt (..), get, getBy, insert, insert_, selectList, update, (==.), (!=.), (=.))
 import Database.Persist.Postgresql (ConnectionPool, runSqlPool)
 import Database.Persist.Sql (SqlPersistT, Single (..), fromSqlKey, rawSql)
 import Judge0 (Judge0Config (..), Judge0Error (..), SubmissionResult (..), submitAndWait)
@@ -113,6 +113,7 @@ toExerciseClient chapSlug (Entity _ ex) = ExerciseClient
   , exerciseLearningObj = Schema.exerciseLearningObjective ex
   , exerciseStubCode    = Schema.exerciseStubCode ex
   , exerciseHints       = getHints (Schema.exerciseHints ex)
+  , exerciseDateAdded   = fmap (T.pack . show) (Schema.exerciseDateAdded ex)
   }
 
 toChapterResponse :: Entity Schema.Chapter -> [Entity Schema.Exercise] -> ChapterResponse
@@ -122,6 +123,7 @@ toChapterResponse (Entity _ ch) exs = ChapterResponse
   , chapterDescription = Schema.chapterDescription ch
   , chapterLesson      = maybe "" id (Schema.chapterLesson ch)
   , chapterExercises   = map (toExerciseClient (Schema.chapterSlug ch)) exs
+  , chapterDateAdded   = fmap (T.pack . show) (Schema.chapterDateAdded ch)
   }
 
 -- Handlers
@@ -148,10 +150,11 @@ meHandler authEnv pool mAuth = do
       , meEmail     = Schema.userEmail user
       }
 
-exercisesListHandler :: ConnectionPool -> Handler ExercisesListResponse
-exercisesListHandler pool = do
-  chapters  <- liftIO $ runSqlPool (selectList [] [Asc Schema.ChapterOrderNum]) pool
-  exercises <- liftIO $ runSqlPool (selectList [] [Asc Schema.ExerciseOrderInChapter]) pool
+exercisesListHandler :: Bool -> ConnectionPool -> Handler ExercisesListResponse
+exercisesListHandler showDraft pool = do
+  let liveOnly f = if showDraft then [] else [f !=. Nothing]
+  chapters  <- liftIO $ runSqlPool (selectList (liveOnly Schema.ChapterDateAdded)  [Asc Schema.ChapterOrderNum]) pool
+  exercises <- liftIO $ runSqlPool (selectList (liveOnly Schema.ExerciseDateAdded) [Asc Schema.ExerciseOrderInChapter]) pool
   let byChapter = Map.fromListWith (flip (++))
         [ (Schema.exerciseChapterId (entityVal e), [e]) | e <- exercises ]
       chapterResps = map (\c ->
@@ -246,11 +249,12 @@ submissionHistoryHandler pool authEnv eid mAuth = do
       , histCode        = Schema.submissionCode sub
       }
 
-progressHandler :: AuthEnv -> ConnectionPool -> Maybe Text -> Handler ProgressResponse
-progressHandler authEnv pool mAuth = do
+progressHandler :: Bool -> AuthEnv -> ConnectionPool -> Maybe Text -> Handler ProgressResponse
+progressHandler showDraft authEnv pool mAuth = do
   userId    <- requireUser authEnv pool mAuth
   chapters  <- liftIO $ runSqlPool (selectList [] [Asc Schema.ChapterOrderNum]) pool
-  exercises <- liftIO $ runSqlPool (selectList [] []) pool
+  let liveOnly f = if showDraft then [] else [f !=. Nothing]
+  exercises <- liftIO $ runSqlPool (selectList (liveOnly Schema.ExerciseDateAdded) []) pool
   progresses <- liftIO $ runSqlPool
     (selectList [Schema.UserProgressUserId ==. userId] [])
     pool
@@ -317,14 +321,14 @@ progressStatusToText Schema.Passed     = "passed"
 
 -- App
 
-server :: Judge0Config -> ConnectionPool -> AuthEnv -> RateLimiter -> Int -> Server API
-server cfg pool authEnv userLimiter rateLimitPerUser =
+server :: Bool -> Judge0Config -> ConnectionPool -> AuthEnv -> RateLimiter -> Int -> Server API
+server showDraft cfg pool authEnv userLimiter rateLimitPerUser =
   healthHandler pool
     :<|> meHandler authEnv pool
-    :<|> (exercisesListHandler pool :<|> exerciseByIdHandler pool)
+    :<|> (exercisesListHandler showDraft pool :<|> exerciseByIdHandler pool)
     :<|> submitHandler cfg pool authEnv userLimiter rateLimitPerUser
     :<|> submissionHistoryHandler pool authEnv
-    :<|> progressHandler authEnv pool
+    :<|> progressHandler showDraft authEnv pool
 
 corsPolicy :: CorsResourcePolicy
 corsPolicy = simpleCorsResourcePolicy
@@ -333,12 +337,12 @@ corsPolicy = simpleCorsResourcePolicy
   , corsRequestHeaders = ["Content-Type", "Authorization"]
   }
 
-app :: Judge0Config -> RateLimiter -> Int -> RateLimiter -> Int -> ConnectionPool -> AuthEnv -> Application
-app cfg ipLimiter rateLimitPerIp userLimiter rateLimitPerUser pool authEnv =
+app :: Bool -> Judge0Config -> RateLimiter -> Int -> RateLimiter -> Int -> ConnectionPool -> AuthEnv -> Application
+app showDraft cfg ipLimiter rateLimitPerIp userLimiter rateLimitPerUser pool authEnv =
   cors (const (Just corsPolicy)) $
   loggingMiddleware $
   rateLimitMiddleware ipLimiter rateLimitPerIp $
-  serve (Proxy :: Proxy API) (server cfg pool authEnv userLimiter rateLimitPerUser)
+  serve (Proxy :: Proxy API) (server showDraft cfg pool authEnv userLimiter rateLimitPerUser)
 
 -- Middleware
 

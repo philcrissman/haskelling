@@ -6,5 +6,6 @@
     "show converts a value to a String, but it requires the type to have a Show instance.",
     "The easiest way to get a Show instance is deriving: add deriving (Show) after the constructors.",
     "Change the data declaration to: data Color = Red | Green | Blue deriving (Show)"
-  ]
+  ],
+  "date_added": null
 }

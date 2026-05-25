@@ -5,6 +5,7 @@
   "hints": [
     "A string literal in Haskell is written with double quotes.",
     "Replace undefined with the string value the function should return.",
-    "Return the string \"Hello, World!\" exactly \u2014 note the comma and exclamation mark."
-  ]
+    "Return the string \"Hello, World!\" exactly — note the comma and exclamation mark."
+  ],
+  "date_added": "2026-05-24"
 }

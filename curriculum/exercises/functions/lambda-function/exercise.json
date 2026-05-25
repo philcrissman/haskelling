@@ -6,5 +6,6 @@
     "Lambda syntax in Haskell: \\x -> expression.",
     "\\x -> x * 2 is an anonymous function that takes x and returns x * 2.",
     "double = \\x -> x * 2 is equivalent to double x = x * 2, but written as a lambda."
-  ]
+  ],
+  "date_added": null
 }

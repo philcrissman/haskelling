@@ -6,5 +6,6 @@
     "Strings in Haskell can be joined with the ++ operator.",
     "You can chain multiple ++ operations: \"a\" ++ \"b\" ++ \"c\" gives \"abc\".",
     "Join \"Hello, \", the name argument, and \"!\" using ++."
-  ]
+  ],
+  "date_added": "2026-05-24"
 }

@@ -44,6 +44,7 @@ data ExerciseClient = ExerciseClient
   , exerciseLearningObj :: Text
   , exerciseStubCode    :: Text
   , exerciseHints       :: [Text]
+  , exerciseDateAdded   :: Maybe Text
   }
 
 instance ToJSON ExerciseClient where
@@ -55,6 +56,7 @@ instance ToJSON ExerciseClient where
     , "learningObjective" .= exerciseLearningObj e
     , "stubCode"         .= exerciseStubCode e
     , "hints"            .= exerciseHints e
+    , "dateAdded"        .= exerciseDateAdded e
     ]
 
 data ChapterResponse = ChapterResponse
@@ -63,6 +65,7 @@ data ChapterResponse = ChapterResponse
   , chapterDescription :: Text
   , chapterLesson      :: Text
   , chapterExercises   :: [ExerciseClient]
+  , chapterDateAdded   :: Maybe Text
   }
 
 instance ToJSON ChapterResponse where
@@ -72,6 +75,7 @@ instance ToJSON ChapterResponse where
     , "description" .= chapterDescription c
     , "lesson"      .= chapterLesson c
     , "exercises"   .= chapterExercises c
+    , "dateAdded"   .= chapterDateAdded c
     ]
 
 newtype ExercisesListResponse = ExercisesListResponse

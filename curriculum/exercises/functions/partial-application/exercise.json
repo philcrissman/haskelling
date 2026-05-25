@@ -4,7 +4,8 @@
   "learning_objective": "Create a new function by partially applying an existing function.",
   "hints": [
     "In Haskell, applying a function to fewer arguments than it expects returns a new function.",
-    "(+5) is an operator section \u2014 shorthand for \\x -> x + 5.",
+    "(+5) is an operator section — shorthand for \\x -> x + 5.",
     "(*3) does the same for multiplication: \\x -> x * 3."
-  ]
+  ],
+  "date_added": null
 }

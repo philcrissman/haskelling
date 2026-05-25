@@ -3,8 +3,9 @@
   "title": "If Expressions",
   "learning_objective": "Use if/then/else as an expression that returns a value.",
   "hints": [
-    "In Haskell, if/then/else is an expression \u2014 both branches must return the same type.",
+    "In Haskell, if/then/else is an expression — both branches must return the same type.",
     "The syntax is: if <condition> then <value-if-true> else <value-if-false>",
     "To negate n, write -n. You may need parentheses when passing it to functions: (-n)."
-  ]
+  ],
+  "date_added": "2026-05-24"
 }

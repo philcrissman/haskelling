@@ -5,6 +5,7 @@
   "hints": [
     "case <expr> of { pattern -> result; ... } lets you branch on any value.",
     "compare a b returns an Ordering: LT (less than), EQ (equal), or GT (greater than).",
-    "You can also solve this with if/then/else or guards \u2014 but case on compare is idiomatic."
-  ]
+    "You can also solve this with if/then/else or guards — but case on compare is idiomatic."
+  ],
+  "date_added": null
 }

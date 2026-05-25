@@ -12,7 +12,7 @@ import Data.Aeson (eitherDecodeStrict, encode)
 import Data.Bifunctor (first)
 import Data.ByteString.Lazy (toStrict)
 import Data.Text (Text, pack)
-import Data.Time (UTCTime)
+import Data.Time (Day, UTCTime)
 import Database.Persist (LiteralType (..), PersistField (..), PersistValue (..))
 import Database.Persist.Sql (PersistFieldSql (..), SqlType (..))
 import Database.Persist.TH
@@ -78,6 +78,7 @@ Chapter
   description Text
   lesson      Text Maybe
   orderNum    Int
+  dateAdded   Day Maybe
   UniqueChapterSlug slug
   deriving Show Eq
 
@@ -91,6 +92,7 @@ Exercise
   hiddenTests       Text
   canonicalSolution Text
   hints             HintList
+  dateAdded         Day Maybe
   createdAt         UTCTime
   updatedAt         UTCTime
   UniqueExerciseSlug slug

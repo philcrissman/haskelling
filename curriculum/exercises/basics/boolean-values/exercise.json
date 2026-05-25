@@ -6,5 +6,6 @@
     "Haskell comparison operators include <, >, <=, >=, == and /=.",
     "A comparison expression evaluates to a Bool: True or False.",
     "Use >= to check whether age is at least 18."
-  ]
+  ],
+  "date_added": "2026-05-24"
 }

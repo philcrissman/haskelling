@@ -79,6 +79,12 @@ main = do
     putStrLn $ "haskelling: Clerk JWKS URL: " <> T.unpack jwksUrl
     newAuthEnv jwksUrl sk
 
+  -- Draft content
+  showDraft <- do
+    s <- lookupEnv "SHOW_DRAFT_CONTENT"
+    pure $ s == Just "true"
+  when showDraft $ putStrLn "haskelling: draft content visible"
+
   -- Rate limiting
   rateLimitPerIp <- do
     s <- lookupEnv "RATE_LIMIT_PER_IP"
@@ -95,4 +101,4 @@ main = do
 
   -- Serve
   putStrLn $ "haskelling: listening on port " <> show port
-  run port (app judge0Cfg ipLimiter rateLimitPerIp userLimiter rateLimitPerUser pool authEnv)
+  run port (app showDraft judge0Cfg ipLimiter rateLimitPerIp userLimiter rateLimitPerUser pool authEnv)

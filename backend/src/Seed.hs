@@ -3,14 +3,14 @@ module Seed where
 import Control.Exception (SomeException, try)
 import Control.Monad (filterM, forM, forM_)
 import Control.Monad.IO.Class (liftIO)
-import Data.Aeson (FromJSON (..), eitherDecode, withObject, (.:))
+import Data.Aeson (FromJSON (..), eitherDecode, withObject, (.:), (.:?))
 import Data.ByteString.Lazy qualified as BSL
 import Data.List (nubBy, sortOn)
 import Data.Map.Strict qualified as Map
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.IO qualified as TIO
-import Data.Time (UTCTime, getCurrentTime)
+import Data.Time (Day, UTCTime, getCurrentTime)
 import Database.Persist (Entity (..), getBy, insert, insert_, update, (=.))
 import Database.Persist.Postgresql (ConnectionPool, runSqlPool)
 import Database.Persist.Sql (SqlPersistT)
@@ -26,37 +26,46 @@ data ExerciseMeta = ExerciseMeta
   , emTitle             :: Text
   , emLearningObjective :: Text
   , emHints             :: [Text]
+  , emDateAdded         :: Maybe Day
   }
 
 instance FromJSON ExerciseMeta where
   parseJSON = withObject "ExerciseMeta" $ \o ->
     ExerciseMeta
-      <$> o .: "order"
-      <*> o .: "title"
-      <*> o .: "learning_objective"
-      <*> o .: "hints"
+      <$> o .:  "order"
+      <*> o .:  "title"
+      <*> o .:  "learning_objective"
+      <*> o .:  "hints"
+      <*> o .:? "date_added"
 
 -- chapter.json (per chapter directory)
 
-newtype ChapterOrder = ChapterOrder { coOrder :: Int }
+data ChapterMeta = ChapterMeta
+  { cmOrder     :: Int
+  , cmDateAdded :: Maybe Day
+  }
 
-instance FromJSON ChapterOrder where
-  parseJSON = withObject "ChapterOrder" $ \o ->
-    ChapterOrder <$> o .: "order"
+instance FromJSON ChapterMeta where
+  parseJSON = withObject "ChapterMeta" $ \o ->
+    ChapterMeta
+      <$> o .:  "order"
+      <*> o .:? "date_added"
 
 -- In-memory exercise record assembled from files
 
 data CurriculumExercise = CurriculumExercise
-  { ceId                :: Text
-  , ceTitle             :: Text
-  , ceChapter           :: Text
-  , ceChapterOrder      :: Int
-  , ceOrder             :: Int
-  , ceLearningObjective :: Text
-  , ceStubCode          :: Text
-  , ceHiddenTestSuite   :: Text
-  , ceCanonicalSolution :: Text
-  , ceHints             :: [Text]
+  { ceId                 :: Text
+  , ceTitle              :: Text
+  , ceChapter            :: Text
+  , ceChapterOrder       :: Int
+  , ceChapterDateAdded   :: Maybe Day
+  , ceOrder              :: Int
+  , ceLearningObjective  :: Text
+  , ceStubCode           :: Text
+  , ceHiddenTestSuite    :: Text
+  , ceCanonicalSolution  :: Text
+  , ceHints              :: [Text]
+  , ceDateAdded          :: Maybe Day
   }
   deriving (Show)
 
@@ -90,9 +99,11 @@ loadExercisesFromDir curriculumDir = do
   fmap concat $ forM chapterSlugs $ \chSlug -> do
     let chDir = exercisesDir </> chSlug
     chOrderBytes <- BSL.readFile (chDir </> "chapter.json")
-    chOrder <- case eitherDecode chOrderBytes of
+    chMeta <- case eitherDecode chOrderBytes of
       Left err -> die $ "Failed to parse chapter.json in " <> chDir <> ": " <> err
-      Right co -> pure (coOrder co)
+      Right m  -> pure m
+    let chOrder     = cmOrder chMeta
+        chDateAdded = cmDateAdded chMeta
     exerciseSlugs <- listDirectory chDir
                        >>= filterM (\d -> doesDirectoryExist (chDir </> d))
     forM exerciseSlugs $ \exSlug -> do
@@ -109,28 +120,31 @@ loadExercisesFromDir curriculumDir = do
         , ceTitle             = emTitle meta
         , ceChapter           = T.pack chSlug
         , ceChapterOrder      = chOrder
+        , ceChapterDateAdded  = chDateAdded
         , ceOrder             = emOrder meta
         , ceLearningObjective = emLearningObjective meta
         , ceStubCode          = stub
         , ceHiddenTestSuite   = tests
         , ceCanonicalSolution = solution
         , ceHints             = emHints meta
+        , ceDateAdded         = emDateAdded meta
         }
 
 -- Upsert helpers
 
-upsertChapter :: Text -> Text -> Text -> Maybe Text -> Int -> SqlPersistT IO ChapterId
-upsertChapter slug title desc lesson orderNum = do
+upsertChapter :: Text -> Text -> Text -> Maybe Text -> Int -> Maybe Day -> SqlPersistT IO ChapterId
+upsertChapter slug title desc lesson orderNum dateAdded = do
   mExisting <- getBy (UniqueChapterSlug slug)
   case mExisting of
     Nothing ->
-      insert (Chapter slug title desc lesson orderNum)
+      insert (Chapter slug title desc lesson orderNum dateAdded)
     Just (Entity key _) -> do
       update key
-        [ ChapterTitle    =. title
+        [ ChapterTitle       =. title
         , ChapterDescription =. desc
-        , ChapterLesson   =. lesson
-        , ChapterOrderNum =. orderNum
+        , ChapterLesson      =. lesson
+        , ChapterOrderNum    =. orderNum
+        , ChapterDateAdded   =. dateAdded
         ]
       pure key
 
@@ -151,6 +165,7 @@ upsertExercise ce chapterId now = do
           , exerciseHiddenTests       = ceHiddenTestSuite ce
           , exerciseCanonicalSolution = ceCanonicalSolution ce
           , exerciseHints             = hints
+          , exerciseDateAdded         = ceDateAdded ce
           , exerciseCreatedAt         = now
           , exerciseUpdatedAt         = now
           }
@@ -164,6 +179,7 @@ upsertExercise ce chapterId now = do
         , ExerciseHiddenTests       =. ceHiddenTestSuite ce
         , ExerciseCanonicalSolution =. ceCanonicalSolution ce
         , ExerciseHints             =. hints
+        , ExerciseDateAdded         =. ceDateAdded ce
         , ExerciseUpdatedAt         =. now
         ]
 
@@ -176,12 +192,13 @@ seedAll lessonsDir exercises now = do
           sortOn ceChapterOrder exercises
 
   chapterIds <- Map.fromList <$> forM uniqueChapters (\ex -> do
-    let slug     = ceChapter ex
-        orderNum = ceChapterOrder ex
+    let slug      = ceChapter ex
+        orderNum  = ceChapterOrder ex
+        dateAdded = ceChapterDateAdded ex
         (title, desc) = chapterMeta slug
     rawLesson <- liftIO $ readLesson lessonsDir slug
     let lesson = if T.null rawLesson then Nothing else Just rawLesson
-    key <- upsertChapter slug title desc lesson orderNum
+    key <- upsertChapter slug title desc lesson orderNum dateAdded
     pure (slug, key))
 
   forM_ exercises $ \ex ->

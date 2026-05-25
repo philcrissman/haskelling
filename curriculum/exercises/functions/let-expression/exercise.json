@@ -6,5 +6,6 @@
     "let <bindings> in <expression> introduces local names scoped to that expression.",
     "Compute the area first: let area = w * h",
     "Then use it: in area * 2"
-  ]
+  ],
+  "date_added": null
 }

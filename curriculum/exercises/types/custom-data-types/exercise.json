@@ -5,6 +5,7 @@
   "hints": [
     "data defines a new type. Each option separated by | is a constructor: data Color = Red | Blue.",
     "You can pattern match on constructors the same way you match on literals.",
-    "Write one equation per constructor \u2014 the compiler will warn if you miss one."
-  ]
+    "Write one equation per constructor — the compiler will warn if you miss one."
+  ],
+  "date_added": null
 }

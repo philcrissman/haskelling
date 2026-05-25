@@ -6,5 +6,6 @@
     "Maybe represents an optional value. Just x wraps a value; Nothing represents absence.",
     "Pattern match on the list: the empty list case [] and the non-empty case (x:xs).",
     "Return Nothing for [] and Just x for (x:_). The _ ignores the tail."
-  ]
+  ],
+  "date_added": null
 }

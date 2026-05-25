@@ -6,5 +6,6 @@
     "where introduces local bindings after the function body.",
     "Define aSquared = a * a and bSquared = b * b in the where clause.",
     "sqrt computes the square root of a Double. Use it on the sum of the two squared values."
-  ]
+  ],
+  "date_added": null
 }

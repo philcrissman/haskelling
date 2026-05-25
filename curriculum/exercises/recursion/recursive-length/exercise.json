@@ -5,6 +5,7 @@
   "hints": [
     "The length of an empty list is 0.",
     "The length of a non-empty list is 1 plus the length of its tail.",
-    "You don't need the head value \u2014 use _ to ignore it: (_:xs)."
-  ]
+    "You don't need the head value — use _ to ignore it: (_:xs)."
+  ],
+  "date_added": null
 }

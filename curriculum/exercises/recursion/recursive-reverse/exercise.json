@@ -6,5 +6,6 @@
     "The reverse of an empty list is an empty list.",
     "To reverse (x:xs), reverse xs first and then put x at the end.",
     "To put x at the end, append the single-element list [x] using ++."
-  ]
+  ],
+  "date_added": null
 }

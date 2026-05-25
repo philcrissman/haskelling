@@ -6,5 +6,6 @@
     "The == operator requires the type to have an Eq instance.",
     "Add deriving (Eq) to the data declaration to get == for free.",
     "Once Eq is derived, sameSuit a b = a == b works directly."
-  ]
+  ],
+  "date_added": null
 }

@@ -4,7 +4,8 @@
   "learning_objective": "Apply a function to every element of a list using map.",
   "hints": [
     "map applies a function to every element of a list: map f [a,b,c] gives [f a, f b, f c].",
-    "(*2) is a section \u2014 a partially applied operator. (*2) 5 gives 10.",
+    "(*2) is a section — a partially applied operator. (*2) 5 gives 10.",
     "map (*2) applies doubling to every element. Try writing it as: map (*2) xs."
-  ]
+  ],
+  "date_added": null
 }

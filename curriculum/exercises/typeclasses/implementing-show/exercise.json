@@ -5,6 +5,7 @@
   "hints": [
     "instance Show Suit where lets you define how show converts a Suit to a String.",
     "Pattern match on each constructor inside the show function body.",
-    "The Unicode suit symbols are: \u2663 (\\9827), \u2666 (\\9830), \u2665 (\\9829), \u2660 (\\9824)."
-  ]
+    "The Unicode suit symbols are: ♣ (\\9827), ♦ (\\9830), ♥ (\\9829), ♠ (\\9824)."
+  ],
+  "date_added": null
 }

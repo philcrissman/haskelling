@@ -6,5 +6,6 @@
     "You can pattern match on a tuple directly in the function argument.",
     "addPair (x, y) = ... binds the first element to x and the second to y.",
     "Once you have x and y, just add them."
-  ]
+  ],
+  "date_added": null
 }

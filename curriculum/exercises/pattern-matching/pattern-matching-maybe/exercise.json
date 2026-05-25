@@ -6,5 +6,6 @@
     "Maybe has two constructors: Nothing and Just x. Write one equation for each.",
     "To match on Just and bind its inner value: Just n matches a Just and binds the Int to n.",
     "For the Just case, return Just (n + 1). For Nothing, return Nothing."
-  ]
+  ],
+  "date_added": null
 }

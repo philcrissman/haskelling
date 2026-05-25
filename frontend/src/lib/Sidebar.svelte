@@ -16,6 +16,12 @@
   }
 
   const { chapters, loading = false, currentId, currentLessonSlug, onSelect, onSelectLesson, avatarUrl, displayName, onSignOut, theme, onToggleTheme }: Props = $props();
+
+  function isNew(dateAdded: string | null): boolean {
+    if (!dateAdded) return false;
+    const diffDays = (Date.now() - new Date(dateAdded).getTime()) / 86_400_000;
+    return diffDays < 30;
+  }
 </script>
 
 <nav class="sidebar" aria-label="Exercise navigation">
@@ -39,7 +45,10 @@
   {:else}
     {#each chapters as chapter}
       <section class="chapter-section">
-        <h2 class="chapter-heading">{chapter.title}</h2>
+        <h2 class="chapter-heading">
+          {chapter.title}
+          {#if isNew(chapter.dateAdded)}<span class="new-badge">new</span>{/if}
+        </h2>
         <ul class="exercise-list">
           {#if chapter.lesson}
             <li>
@@ -64,12 +73,14 @@
                 onclick={(e) => { e.preventDefault(); onSelect(exercise.id); }}
               >
                 {exercise.title}
+                {#if isNew(exercise.dateAdded)}<span class="new-badge">new</span>{/if}
               </a>
             </li>
           {/each}
         </ul>
       </section>
     {/each}
+    <p class="coming-soon">More exercises coming soon</p>
   {/if}
   </div>
 
@@ -214,6 +225,33 @@
 
   .lesson-link.active {
     color: var(--brand-text);
+  }
+
+  .new-badge {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.55rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--brand);
+    border: 1px solid var(--brand);
+    border-radius: 2px;
+    padding: 0 0.25em;
+    margin-left: 0.4em;
+    vertical-align: middle;
+    line-height: 1.4;
+    opacity: 0.8;
+  }
+
+  .coming-soon {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-3);
+    padding: 0.5rem 1rem 0.25rem;
+    margin: 0;
   }
 
   .user-footer {

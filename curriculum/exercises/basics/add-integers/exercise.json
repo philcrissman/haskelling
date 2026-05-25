@@ -6,5 +6,6 @@
     "Functions in Haskell return the value of the last expression in their body.",
     "The + operator works on Int values.",
     "Replace undefined with an expression that combines x and y."
-  ]
+  ],
+  "date_added": "2026-05-24"
 }

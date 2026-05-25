@@ -16,6 +16,7 @@ export interface Exercise {
   learningObjective: string;
   stubCode: string;
   hints: string[];
+  dateAdded: string | null;
 }
 
 export interface Chapter {
@@ -24,6 +25,7 @@ export interface Chapter {
   description: string;
   lesson: string;
   exercises: Exercise[];
+  dateAdded: string | null;
 }
 
 export interface SubmissionHistoryItem {
