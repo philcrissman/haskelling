@@ -4,11 +4,13 @@ import Control.Exception (SomeException, try)
 import Control.Monad (filterM, forM, forM_)
 import Control.Monad.IO.Class (liftIO)
 import Data.Aeson (FromJSON (..), eitherDecode, withObject, (.:), (.:?))
+import Data.ByteString qualified as BS
 import Data.ByteString.Lazy qualified as BSL
 import Data.List (nubBy, sortOn)
 import Data.Map.Strict qualified as Map
 import Data.Text (Text)
 import Data.Text qualified as T
+import Data.Text.Encoding (decodeUtf8)
 import Data.Text.IO qualified as TIO
 import Data.Time (Day, UTCTime, getCurrentTime)
 import Database.Persist (Entity (..), getBy, insert, insert_, update, (=.))
@@ -86,7 +88,7 @@ chapterMeta slug               = (slug, "")
 readLesson :: FilePath -> Text -> IO Text
 readLesson lessonsDir slug = do
   let path = lessonsDir <> "/" <> T.unpack slug <> ".md"
-  result <- try (TIO.readFile path) :: IO (Either SomeException Text)
+  result <- try (fmap decodeUtf8 (BS.readFile path)) :: IO (Either SomeException Text)
   pure $ either (const "") id result
 
 -- Load all exercises from curriculum/exercises/
