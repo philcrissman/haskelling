@@ -2,14 +2,24 @@
 
 ## Functions
 
-A Haskell program is a collection of functions. The simplest function takes no arguments and just returns a value:
+A Haskell program is a collection of functions. The simplest function takes no
+arguments and just returns a value:
 
 ```haskell
 greeting :: String
 greeting = "Hello, World!"
 ```
 
-The first line is the **type signature** — `greeting` has type `String`. The second line is the **definition**.
+The first line is the **type signature** — `greeting` has type `String`. The
+second line is the **definition**.
+
+Worth noting right away: this isn't assignment. `greeting = "Hello, World!"`
+means `greeting` *is* `"Hello, World!"` — permanently. You can't reassign it
+later. In Haskell, you define things; you don't mutate them.
+
+Type signatures are optional — GHC can usually infer them — but you'll want to
+write them anyway. They're documentation, and they help the compiler catch
+mistakes early.
 
 Functions that take arguments list them before the `=`:
 
@@ -18,27 +28,51 @@ add :: Int -> Int -> Int
 add x y = x + y
 ```
 
-The type `Int -> Int -> Int` reads: "takes an Int, then another Int, returns an Int." To call a function, write its name followed by its arguments separated by spaces — no parentheses needed:
+The type `Int -> Int -> Int` reads: "takes an Int, then another Int, returns an
+Int." The arrow notation reflects something fundamental about how Haskell
+functions work — we'll get to that soon. For now, read each `->` as separating
+inputs from output, with the last type being the return type.
+
+To call a function, write its name followed by its arguments separated by
+spaces:
 
 ```haskell
 add 2 3    -- gives 5
 ```
 
+No parentheses, no commas. If you're coming from another language, the
+temptation to write `add(2, 3)` is real — but that's not Haskell. Parentheses
+are only for grouping: `add (1 + 1) 3`.
+
 ## Strings
 
-A `String` in Haskell is written with double quotes: `"Hello"`. Strings can be joined with `++`:
+A `String` in Haskell is written with double quotes: `"Hello"`. Join strings
+with `++`:
 
 ```haskell
-"Hello, " ++ "World!"    -- gives "Hello, World!"
+"Hello, " ++ "World!"    -- "Hello, World!"
 ```
+
+That's `++`, not `+`. The `+` operator is only for numbers.
+
+One thing you'll run into in GHC error messages: `String` and `[Char]` are the
+same type. `String` is just a type alias for a list of characters. If the
+compiler says `[Char]` where you expected `String`, that's why.
 
 ## Numbers
 
-`Int` is a fixed-precision integer. The usual arithmetic operators work: `+`, `-`, `*`. There is no implicit conversion between types — `Int` and `Integer` (arbitrary precision) are distinct.
+`Int` is a fixed-precision integer. It's machine-word-sized, so it can overflow
+on very large values. `Integer` gives you arbitrary precision at the cost of
+some performance. For the exercises here, `Int` is fine.
+
+The usual arithmetic operators work: `+`, `-`, `*`. There's no implicit
+conversion between numeric types — if a function expects an `Int`, you can't
+pass it a `Double` without converting explicitly. This is stricter than most
+languages, but it eliminates a whole category of subtle bugs.
 
 ## Bool
 
-The type `Bool` has two values: `True` and `False`. Comparison operators return `Bool`:
+`Bool` has two values: `True` and `False`. Comparison operators return `Bool`:
 
 ```haskell
 5 > 3      -- True
@@ -47,24 +81,37 @@ The type `Bool` has two values: `True` and `False`. Comparison operators return 
 10 >= 10   -- True
 ```
 
+`==` in Haskell is always value equality. There's no reference equality to
+worry about.
+
 Logical operators: `&&` (and), `||` (or), `not`.
 
 ## if/then/else
 
-In Haskell, `if` is an **expression** — it always returns a value, and both branches must have the same type:
+In Haskell, `if` is an **expression** — it produces a value:
 
 ```haskell
 absolute :: Int -> Int
 absolute n = if n < 0 then -n else n
 ```
 
-There is no `if` without `else`. The `else` branch is mandatory.
+Because `if` must produce a value, both branches are required and must have the
+same type. There's no `if` without `else`. This, for example, is a type error:
+
+```haskell
+if True then "hello" else 42   -- String vs. Int: rejected
+```
+
+Both branches have to agree on a type. The compiler enforces this.
 
 ## undefined
 
-You will see `undefined` in exercise stubs. It is a placeholder that compiles but crashes at runtime. Replace it with your actual implementation.
+You'll see `undefined` in exercise stubs. It's a placeholder — it compiles, but
+crashes if it's ever evaluated. Replace it with your actual implementation.
 
 ## Further reading
 
-- [Haskell `Prelude` on Hoogle](https://hoogle.haskell.org/?hoogle=Prelude) — search for any function mentioned here
+- [Haskell `Prelude` on Hoogle](https://hoogle.haskell.org/?hoogle=Prelude) —
+  search for any function mentioned here
 - [Learn You a Haskell — Starting Out](http://learnyouahaskell.com/starting-out)
+  — free, a little dated visually, but still one of the best introductions
