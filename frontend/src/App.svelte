@@ -24,12 +24,12 @@
 
   $effect(() => {
     if (currentExercise) {
-      document.title = `${currentExercise.title} — haskelling`;
+      document.title = `${currentExercise.title} — Haskelling`;
     } else if (currentLessonSlug) {
       const ch = chapters.find(c => c.slug === currentLessonSlug);
-      document.title = ch ? `${ch.title} — haskelling` : 'haskelling';
+      document.title = ch ? `${ch.title} — Haskelling` : 'haskelling';
     } else {
-      document.title = 'haskelling — Learn Haskell by doing';
+      document.title = 'Haskelling — Learn Haskell by doing';
     }
   });
 
@@ -145,7 +145,7 @@
 {:else if !signedIn}
   <div class="sign-in-bg">
     <div class="sign-in-card">
-      <h1 class="brand">haskelling</h1>
+      <h1 class="brand">Haskelling</h1>
       <p class="tagline">Learn Haskell by doing</p>
       <button class="sign-in-btn" onclick={handleSignIn}>
         Sign in with GitHub
@@ -164,7 +164,7 @@
         aria-expanded={sidebarOpen}
         aria-controls="sidebar-nav"
       >☰</button>
-      <span class="mobile-brand">haskelling</span>
+      <span class="mobile-brand">Haskelling</span>
     </div>
     {#if sidebarOpen}
       <div class="sidebar-backdrop" onclick={() => sidebarOpen = false} aria-hidden="true"></div>
@@ -290,7 +290,6 @@
 
     .mobile-brand {
       font-family: var(--font-display);
-      font-style: italic;
       font-weight: 700;
       font-size: 1.05rem;
       color: var(--brand);
@@ -395,7 +394,6 @@
     font-family: var(--font-display);
     font-size: 2rem;
     font-weight: 700;
-    font-style: italic;
     color: var(--brand);
     margin: 0;
   }

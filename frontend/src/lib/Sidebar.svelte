@@ -26,7 +26,7 @@
 
 <nav class="sidebar" aria-label="Exercise navigation">
   <div class="sidebar-header">
-    <span class="site-title">haskelling</span>
+    <span class="site-title">Haskelling</span>
     <span class="site-tagline">Learn Haskell by doing</span>
   </div>
 
@@ -127,7 +127,6 @@
     font-family: var(--font-display);
     font-size: 1.15rem;
     font-weight: 700;
-    font-style: italic;
     letter-spacing: -0.01em;
     color: var(--brand);
   }
