@@ -2,24 +2,19 @@
 
 ## Functions
 
-A Haskell program is a collection of functions. The simplest function takes no
-arguments and just returns a value:
+Haskell is a functional programming language; among other things, this means that most of what we do when we write Haskell is defining functions. The simplest function takes no arguments and just returns a value:
 
 ```haskell
 greeting :: String
 greeting = "Hello, World!"
 ```
 
-The first line is the **type signature** — `greeting` has type `String`. The
+The first line is the **type signature** — `greeting` has the type `String`. The
 second line is the **definition**.
 
-Worth noting right away: this isn't assignment. `greeting = "Hello, World!"`
-means `greeting` *is* `"Hello, World!"` — permanently. You can't reassign it
-later. In Haskell, you define things; you don't mutate them.
+Type signatures are optional—Haskell is able to infer types in most cases—but almost every book about learning Haskell will encourage you to write them anyways. They can be documentation, and they help the compiler catch mistakes.
 
-Type signatures are optional — GHC can usually infer them — but you'll want to
-write them anyway. They're documentation, and they help the compiler catch
-mistakes early.
+For what it's worth: this isn't assignment, it's more like a definition. `greeting = "Hello, World!"` means `greeting` *is* `"Hello, World!"` In Haskell, you define things; you don't mutate them.
 
 Functions that take arguments list them before the `=`:
 
@@ -40,8 +35,7 @@ spaces:
 add 2 3    -- gives 5
 ```
 
-No parentheses, no commas. If you're coming from another language, the
-temptation to write `add(2, 3)` is real — but that's not Haskell. Parentheses
+Note there's no parens, or commas, above. If you're coming from another language, you might be tempted to write `add(2, 3)`, but that's not needed here. Parentheses
 are only for grouping: `add (1 + 1) 3`.
 
 ## Strings
@@ -55,7 +49,7 @@ with `++`:
 
 That's `++`, not `+`. The `+` operator is only for numbers.
 
-One thing you'll run into in GHC error messages: `String` and `[Char]` are the
+One thing you may run into: `String` and `[Char]` are the
 same type. `String` is just a type alias for a list of characters. If the
 compiler says `[Char]` where you expected `String`, that's why.
 
@@ -114,4 +108,3 @@ crashes if it's ever evaluated. Replace it with your actual implementation.
 - [Haskell `Prelude` on Hoogle](https://hoogle.haskell.org/?hoogle=Prelude) —
   search for any function mentioned here
 - [Learn You a Haskell — Starting Out](http://learnyouahaskell.com/starting-out)
-  — free, a little dated visually, but still one of the best introductions
