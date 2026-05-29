@@ -1,7 +1,7 @@
 {
   "order": 5,
   "title": "If Expressions",
-  "learning_objective": "Use if/then/else as an expression that returns a value.",
+  "learning_objective": "Implement absolute value: return n unchanged if non-negative, negate it if negative.",
   "hints": [
     "In Haskell, if/then/else is an expression — both branches must return the same type.",
     "The syntax is: if <condition> then <value-if-true> else <value-if-false>",
