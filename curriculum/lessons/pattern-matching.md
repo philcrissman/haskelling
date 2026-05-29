@@ -59,13 +59,15 @@ bmiCategory bmi
 
 `otherwise` is just `True` — it acts as the catch-all. Unlike `if`, guards do not require an else branch, but GHC will warn you if no guard can match.
 
-You can combine guards with pattern matching:
+You can combine guards with pattern matching — different equations handle different shapes, and guards refine within an equation:
 
 ```haskell
-safeDiv :: Int -> Int -> Maybe Int
-safeDiv _ 0 = Nothing
-safeDiv x y
-  | y /= 0   = Just (x `div` y)
+describeList :: [a] -> String
+describeList []  = "empty"
+describeList [_] = "singleton"
+describeList xs
+  | length xs < 5 = "short"
+  | otherwise     = "long"
 ```
 
 ## Matching on tuples
