@@ -9,9 +9,10 @@ module Server
 import API
 import Auth (AuthEnv)
 import Auth qualified
+import Control.Concurrent (forkIO, threadDelay)
 import Control.Concurrent.STM
 import Control.Exception (SomeException, try)
-import Control.Monad (when)
+import Control.Monad (forever, void, when)
 import Control.Monad.IO.Class (liftIO)
 import Data.Aeson (encode, object, (.=))
 import Data.ByteString.Char8 qualified as BC8
@@ -21,14 +22,15 @@ import Data.Map.Strict qualified as Map
 import Data.Ord (comparing)
 import Data.Text (Text)
 import Data.Text qualified as T
-import Data.Time (UTCTime, diffUTCTime, getCurrentTime)
+import Data.Text.Encoding qualified as TE
+import Data.Time (NominalDiffTime, UTCTime, diffUTCTime, getCurrentTime)
 import Database.Persist (Entity (..), SelectOpt (..), get, getBy, insert, insert_, selectList, update, (==.), (!=.), (=.))
 import Database.Persist.Postgresql (ConnectionPool, runSqlPool)
 import Database.Persist.Sql (SqlPersistT, Single (..), fromSqlKey, rawSql)
 import Judge0 (Judge0Config (..), Judge0Error (..), SubmissionResult (..), submitAndWait)
 import Network.HTTP.Types (statusCode, status429)
-import Network.Socket (SockAddr (..), hostAddressToTuple)
-import Network.Wai (pathInfo, remoteHost, requestMethod, responseStatus, responseLBS)
+import Network.Socket (SockAddr (..), hostAddressToTuple, hostAddress6ToTuple)
+import Network.Wai (Request, pathInfo, remoteHost, requestHeaders, requestMethod, responseStatus, responseLBS)
 import Network.Wai.Middleware.Cors
 import qualified Schema
 import Schema (HintList (..))
@@ -38,24 +40,59 @@ import Servant
 
 type RateLimiter = TVar (Map Text (Int, UTCTime))
 
+-- Sliding-window length, shared by the limiter and the reaper so they can't drift.
+rateLimitWindowSeconds :: NominalDiffTime
+rateLimitWindowSeconds = 60
+
+-- A reaper prunes entries whose window has expired (BE-25); without it the map
+-- grows one permanent entry per distinct key forever.
+reaperIntervalMicros :: Int
+reaperIntervalMicros = 300_000_000  -- 5 minutes
+
 newRateLimiter :: IO RateLimiter
-newRateLimiter = newTVarIO Map.empty
+newRateLimiter = do
+  limiter <- newTVarIO Map.empty
+  void $ forkIO (reaper limiter)
+  pure limiter
+
+-- Periodically drop entries older than the window. Any key older than the
+-- window would be reset on its next request anyway, so pruning is lossless.
+reaper :: RateLimiter -> IO ()
+reaper limiter = forever $ do
+  threadDelay reaperIntervalMicros
+  now <- getCurrentTime
+  atomically $ modifyTVar' limiter $
+    Map.filter (\(_, windowStart) -> diffUTCTime now windowStart < rateLimitWindowSeconds)
 
 checkAndIncrement :: RateLimiter -> Int -> Text -> UTCTime -> STM Bool
 checkAndIncrement limiter maxPerMin ip now = do
   m <- readTVar limiter
   let (count, windowStart) = maybe (0, now) id (Map.lookup ip m)
       elapsed              = diffUTCTime now windowStart
-  if elapsed >= 60
+  if elapsed >= rateLimitWindowSeconds
     then writeTVar limiter (Map.insert ip (1, now) m)      >> pure True
     else if count >= maxPerMin
            then pure False
            else writeTVar limiter (Map.insert ip (count + 1, windowStart) m) >> pure True
 
+-- The rate-limit key: prefer Fly's trusted client-IP header (BE-24). Behind
+-- Fly's edge proxy, remoteHost is the proxy address, not the client, so it
+-- collapses every user into one bucket. Fly-Client-IP is set by the platform
+-- and is not client-spoofable the way a raw X-Forwarded-For would be; fall back
+-- to the socket peer only when the header is absent (e.g. local dev).
+clientIp :: Request -> Text
+clientIp req =
+  case lookup "Fly-Client-IP" (requestHeaders req) of
+    Just ip -> TE.decodeUtf8 ip
+    Nothing -> sockAddrIp (remoteHost req)
+
 sockAddrIp :: SockAddr -> Text
 sockAddrIp (SockAddrInet _ addr) =
   let (a, b, c, d) = hostAddressToTuple addr
   in T.intercalate "." (map (T.pack . show) [a, b, c, d])
+sockAddrIp (SockAddrInet6 _ _ addr _) =
+  let (a, b, c, d, e, f, g, h) = hostAddress6ToTuple addr
+  in T.intercalate ":" (map (T.pack . show) [a, b, c, d, e, f, g, h])
 sockAddrIp sa = T.pack (show sa)
 
 -- Error helper
@@ -351,7 +388,7 @@ rateLimitMiddleware limiter maxPerMin inner req send =
   if requestMethod req == "POST" && pathInfo req == ["api", "submissions"]
     then do
       now <- getCurrentTime
-      let ip = sockAddrIp (remoteHost req)
+      let ip = clientIp req
       allowed <- atomically $ checkAndIncrement limiter maxPerMin ip now
       if allowed
         then inner req send

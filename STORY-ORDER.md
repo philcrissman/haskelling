@@ -200,6 +200,21 @@ Each phase should be independently testable before starting the next.
 
 ---
 
+## Phase 10.6 — Pre-launch Security Hardening
+
+*Found in a security review of the backend. BE-24 and BE-25 are launch-blocking — per-IP rate limiting is non-functional in production as written. BE-26 and BE-27 are hardening that should land before public traffic.*
+
+| ID | Story | Notes |
+|----|-------|-------|
+| BE-24 | Per-IP rate limiting broken behind Fly's proxy (issue #82) | HIGH — `remoteHost` is the Fly proxy, not the client; read `Fly-Client-IP`. Fix with BE-25. |
+| BE-25 | Rate-limiter map grows unbounded (issue #83) | MEDIUM-HIGH — entries never evicted; memory-exhaustion vector once BE-24 keys on real IPs. Fix with BE-24. |
+| BE-26 | JWT validation does not pin issuer or authorized party (issue #84) | MEDIUM — pin `iss`/`azp`; signature check is the primary defense but these are standard hardening. |
+| BE-27 | JWKS cache never refreshes (issue #85) | MEDIUM (availability) — Clerk key rotation breaks all logins until restart; refresh on failure or TTL the cache. |
+
+**Phase complete when:** Rate limiting keys on real client IPs and the limiter map is bounded; JWTs are validated against the expected issuer/authorized party; and JWKS key rotation no longer requires a restart.
+
+---
+
 ## Phase 11 — Production Launch
 
 *The current Fly.io deployment is production (no separate staging instance). This phase hardens it for public use.*
