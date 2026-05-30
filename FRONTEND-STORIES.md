@@ -492,3 +492,24 @@ FE-08 (progress indicators) depends on the backend Phase 3 auth being complete �
 Add Vitest + @testing-library/svelte component tests and mocked API tests. Optionally add Playwright smoke tests. See issue #73 for full scope.
 
 **Deferred — post-launch.**
+
+---
+
+### FE-36: Admin dashboard — users and progress view
+
+**Size:** M
+
+**Description:**
+A view, reachable only by admins, listing all registered users and how far each has progressed (backed by BE-30's `GET /api/admin/users`). Read-only for v1 — no mutating actions (resetting progress, deleting users) in this story; capture those separately if wanted later.
+
+Gate the route and nav entry on the `role` field from `GET /api/me` (BE-28). UI hiding is convenience only — the backend `403` from `requireAdmin` is the real boundary, and the view must handle that 403 gracefully (e.g. redirect or "not authorized") rather than assuming the nav was hidden.
+
+**Depends on:** BE-28 (role in `/api/me`), BE-30 (admin users API)
+
+**Acceptance criteria:**
+- [ ] An "Admin" nav entry appears only when `me.role` is admin
+- [ ] The admin route renders a table of users with their progress summary from `GET /api/admin/users`
+- [ ] A non-admin hitting the admin URL directly gets a graceful "not authorized" state (handles the backend 403), not a broken page
+- [ ] Loading and error states match the patterns established in FE-16/FE-17
+
+**Deferred — post-launch.**

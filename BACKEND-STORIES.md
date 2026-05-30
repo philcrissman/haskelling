@@ -653,3 +653,66 @@ Implement stories in this sequence; each phase should be independently testable 
 Add a Haskell test suite covering unit tests (pure logic, no DB) and integration tests (against a real test DB). See issue #72 for full scope.
 
 **Deferred — post-launch.**
+
+---
+
+## Admin Dashboard (post-launch)
+
+*An authenticated operator view of registered users and their progress. Not launch-blocking.*
+
+### BE-28: Admin role and authorization gate
+
+**Size:** M
+
+**Description:**
+Introduce a role on `User` and an authorization gate for admin-only endpoints. Use a `UserRole` enum (`RegularUser | Admin`) stored via `derivePersistField`, mirroring the existing `SubmissionStatus`/`ProgressStatus` pattern in `Schema.hs` — this costs no more than a boolean here but reads better at call sites and leaves room for future roles. (If we decide we'll never have more than admin/not, swapping to a plain `isAdmin :: Bool` is a one-line change.)
+
+Add a `requireAdmin` helper that builds on `requireUser`: resolve the caller's `UserId`, look up their role, and reject non-admins with `403` (`{"code":"forbidden"}`) before any admin handler body runs — the backend is the real gate, never UI hiding alone.
+
+Also expose the caller's role in `GET /api/me` so the frontend can decide whether to render admin navigation (FE-36).
+
+**Acceptance criteria:**
+- [ ] `User` has a `role` column; new users default to `RegularUser`
+- [ ] Migration runs cleanly on the existing production table (existing rows backfill to `RegularUser`)
+- [ ] `requireAdmin` returns `403` with a JSON error for authenticated non-admins and `401` for unauthenticated requests
+- [ ] `GET /api/me` includes a `role` field (camelCase value, e.g. `"admin"` / `"regularUser"`)
+- [ ] No admin endpoint relies on UI hiding for access control
+
+---
+
+### BE-29: Promote an account to admin
+
+**Size:** S
+
+**Description:**
+A repeatable, low-ceremony way to mark an account as admin — needed to bootstrap the first admin (the owner's account) and any later ones. Recommended: read an env var (e.g. `BOOTSTRAP_ADMIN_EMAILS` or `BOOTSTRAP_ADMIN_CLERK_IDS`) at startup and, idempotently, set matching existing users to `Admin`. This fits the existing `Main.hs` env-reading pattern and avoids manual SQL against Neon: set the Fly secret, restart, done. Note the ordering wrinkle — a user row only exists after first sign-in, so the bootstrap should promote on startup *and/or* at user-creation time, and must no-op safely when the user isn't present yet.
+
+Manual SQL (`UPDATE "user" SET role = 'Admin' WHERE clerk_id = '…'`) is the documented fallback.
+
+**Depends on:** BE-28
+
+**Acceptance criteria:**
+- [ ] Setting the bootstrap env var and restarting promotes the matching account(s) to `Admin`
+- [ ] Running it again with the same value is a no-op (idempotent)
+- [ ] Promotion before the user has signed in does not crash startup; it applies once the user record exists
+- [ ] The mechanism is documented (env var name + manual SQL fallback) in the secrets/ops notes
+
+---
+
+### BE-30: Admin API — list users with progress summary
+
+**Size:** M
+
+**Description:**
+An admin-gated endpoint backing the dashboard: list all registered users with a summary of how far each has gotten. Aim for one aggregate query rather than N+1 over `UserProgress`.
+
+**Depends on:** BE-28
+
+**Acceptance criteria:**
+- [ ] `GET /api/admin/users` is gated by `requireAdmin` (403 for non-admins)
+- [ ] Response includes, per user: id, username, email, avatar, createdAt, exercises attempted, exercises passed, and last activity timestamp
+- [ ] Progress counts are computed in the query/aggregation layer, not by per-user round-trips
+- [ ] Fields are camelCase, consistent with the rest of the API
+- [ ] Sensible default ordering (e.g. most-recently-active first)
+
+**Deferred — post-launch.**

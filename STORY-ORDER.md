@@ -249,6 +249,23 @@ Each phase should be independently testable before starting the next.
 
 ---
 
+## Phase 13 — Post-launch: Admin Dashboard
+
+*Deferred until after public launch. An operator view of registered users and their progress. Implement BE-28 first — it's the authorization boundary the rest depend on.*
+
+| ID | Story |
+|----|-------|
+| BE-28 | Admin role and authorization gate; expose `role` in `/api/me` |
+| BE-29 | Promote an account to admin (env-var bootstrap; depends on BE-28) |
+| BE-30 | Admin API — list users with progress summary (depends on BE-28) |
+| FE-36 | Admin dashboard — users and progress view (depends on BE-28, BE-30) |
+
+**Suggested order:** BE-28 → BE-29 (bootstrap your own account) → BE-30 → FE-36.
+
+**Phase complete when:** An admin can sign in and see a list of all registered users with their progress, non-admins receive a 403 from the admin API, and admin access is grantable without manual SQL.
+
+---
+
 ## Full Story Count
 
 | Phase | Stories | IDs |
