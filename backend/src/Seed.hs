@@ -79,6 +79,7 @@ chapterMeta "types-and-typeclasses" = ("Types and Typeclasses", "Reading types, 
 chapterMeta "syntax-in-functions" = ("Syntax in Functions", "Ways to write a function body: pattern matching, guards, where, let, and case expressions. Follows LYAH chapter 4.")
 chapterMeta "recursion"        = ("Recursion",          "Defining functions in terms of themselves: base cases, recursive cases, and classic list functions reimplemented from scratch. Follows LYAH chapter 5.")
 chapterMeta "higher-order-functions" = ("Higher Order Functions", "Functions that take or return functions: currying and partial application, map and filter, lambdas, folds, and function composition. Follows LYAH chapter 6.")
+chapterMeta "making-our-own-types-and-typeclasses" = ("Making Our Own Types and Typeclasses", "Defining your own types: algebraic data types, record syntax, type parameters, derived instances, type synonyms, recursive types, and writing typeclass instances. Follows LYAH chapter 8.")
 chapterMeta slug               = (slug, "")
 
 -- Read lesson markdown for a chapter (returns empty string if file missing)

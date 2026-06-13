@@ -1,0 +1,11 @@
+{
+  "order": 6,
+  "title": "Recursive Types",
+  "learning_objective": "Recurse over a binary tree data type to sum all the values it holds.",
+  "hints": [
+    "See the \"Recursive data structures\" section of LYAH — Making Our Own Types and Typeclasses.",
+    "Base case: an empty tree (Leaf) sums to 0.",
+    "Recursive case: a Node holds a left subtree, a value, and a right subtree — sum all three."
+  ],
+  "date_added": "2026-06-12"
+}

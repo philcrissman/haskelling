@@ -1,0 +1,11 @@
+{
+  "order": 2,
+  "title": "Record Syntax",
+  "learning_objective": "Use record update syntax to return a person who is one year older.",
+  "hints": [
+    "See the \"Record syntax\" section of LYAH — Making Our Own Types and Typeclasses.",
+    "age p reads the age field; p { age = ... } makes a copy with a new age.",
+    "Combine them: p { age = age p + 1 }."
+  ],
+  "date_added": "2026-06-12"
+}

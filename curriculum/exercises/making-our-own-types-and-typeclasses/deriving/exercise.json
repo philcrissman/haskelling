@@ -1,0 +1,11 @@
+{
+  "order": 4,
+  "title": "Deriving Instances",
+  "learning_objective": "Add a deriving clause so a custom type supports equality, ordering, showing, and enumeration.",
+  "hints": [
+    "See the \"Derived instances\" section of LYAH — Making Our Own Types and Typeclasses.",
+    "Add a deriving clause to the data declaration to get standard instances for free.",
+    "You'll need Eq, Ord, Show, Enum, and Bounded for the tests to pass."
+  ],
+  "date_added": "2026-06-12"
+}

@@ -1,0 +1,11 @@
+{
+  "order": 7,
+  "title": "Typeclasses",
+  "learning_objective": "Write an instance of a typeclass for a custom data type.",
+  "hints": [
+    "See the \"Typeclasses 102\" section of LYAH — Making Our Own Types and Typeclasses.",
+    "The class Describable requires one method: describe :: a -> String.",
+    "Fill in the instance with one equation per Animal constructor."
+  ],
+  "date_added": "2026-06-12"
+}

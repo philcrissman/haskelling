@@ -1,0 +1,11 @@
+{
+  "order": 1,
+  "title": "Algebraic Data Types",
+  "learning_objective": "Pattern match on the value constructors of a custom data type to compute a shape's area.",
+  "hints": [
+    "See the \"Algebraic data types intro\" section of LYAH — Making Our Own Types and Typeclasses.",
+    "Write one equation per constructor: one for Square, one for Rectangle.",
+    "A square of side s has area s * s; a rectangle is w * h."
+  ],
+  "date_added": "2026-06-12"
+}

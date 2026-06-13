@@ -1,0 +1,11 @@
+{
+  "order": 3,
+  "title": "Type Parameters",
+  "learning_objective": "Work with a parameterized type by returning the contained value, or a default when there is none.",
+  "hints": [
+    "See the \"Type parameters\" section of LYAH — Making Our Own Types and Typeclasses.",
+    "Optional a is like Maybe: it is either None or Some x.",
+    "Pattern match: return x for Some x, and the default for None."
+  ],
+  "date_added": "2026-06-12"
+}

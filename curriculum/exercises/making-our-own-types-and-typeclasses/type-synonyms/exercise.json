@@ -1,0 +1,11 @@
+{
+  "order": 5,
+  "title": "Type Synonyms",
+  "learning_objective": "Look up a value in an association list described by a type synonym, returning a Maybe.",
+  "hints": [
+    "See the \"Type synonyms\" section of LYAH — Making Our Own Types and Typeclasses.",
+    "PhoneBook is just a synonym for [(String, String)] — it reads more clearly but behaves the same.",
+    "The Prelude function lookup already returns a Maybe; you can use it directly."
+  ],
+  "date_added": "2026-06-12"
+}
