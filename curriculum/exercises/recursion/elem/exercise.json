@@ -1,0 +1,11 @@
+{
+  "order": 6,
+  "title": "Recursive Elem",
+  "learning_objective": "Implement elem' recursively, testing whether a value appears in a list.",
+  "hints": [
+    "See the elem' example in LYAH — Recursion.",
+    "Base case: nothing is an element of the empty list, so return False.",
+    "Recursive case: if the head equals the target return True, otherwise search the tail."
+  ],
+  "date_added": "2026-06-12"
+}

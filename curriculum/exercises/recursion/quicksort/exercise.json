@@ -1,0 +1,11 @@
+{
+  "order": 7,
+  "title": "Quicksort",
+  "learning_objective": "Implement quicksort recursively using list comprehensions to partition around the head.",
+  "hints": [
+    "See the quicksort example in LYAH — Recursion.",
+    "Base case: an empty list is already sorted.",
+    "Recursive case: sort the elements <= the head and the elements > the head, then join them around the head with ++."
+  ],
+  "date_added": "2026-06-12"
+}

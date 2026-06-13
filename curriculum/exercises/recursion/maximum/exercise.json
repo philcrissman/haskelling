@@ -1,0 +1,11 @@
+{
+  "order": 1,
+  "title": "Recursive Maximum",
+  "learning_objective": "Implement maximum' recursively, finding the largest element of a non-empty list.",
+  "hints": [
+    "See the maximum' example in LYAH — Recursion.",
+    "Base case: a single-element list [x] has maximum x.",
+    "Recursive case: compare the head with the maximum of the tail using max."
+  ],
+  "date_added": "2026-06-12"
+}

@@ -1,0 +1,11 @@
+{
+  "order": 4,
+  "title": "Recursive Reverse",
+  "learning_objective": "Implement reverse' recursively, reversing the order of a list's elements.",
+  "hints": [
+    "See the reverse' example in LYAH — Recursion.",
+    "Base case: reversing [] gives [].",
+    "Recursive case: reverse the tail, then append the head at the end with ++ [x]."
+  ],
+  "date_added": "2026-06-12"
+}

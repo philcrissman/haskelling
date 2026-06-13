@@ -1,0 +1,11 @@
+{
+  "order": 2,
+  "title": "Recursive Replicate",
+  "learning_objective": "Implement replicate' recursively, producing a list of n copies of a value.",
+  "hints": [
+    "See the replicate' example in LYAH — Recursion.",
+    "Base case: when n is 0 or less, return the empty list.",
+    "Recursive case: cons one copy onto replicate' (n - 1) x."
+  ],
+  "date_added": "2026-06-12"
+}

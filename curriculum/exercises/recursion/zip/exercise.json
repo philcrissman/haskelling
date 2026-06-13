@@ -1,0 +1,11 @@
+{
+  "order": 5,
+  "title": "Recursive Zip",
+  "learning_objective": "Implement zip' recursively, pairing up the elements of two lists.",
+  "hints": [
+    "See the zip' example in LYAH — Recursion.",
+    "Base case: if either list is empty, the result is empty.",
+    "Recursive case: pair the two heads, then zip' the two tails."
+  ],
+  "date_added": "2026-06-12"
+}

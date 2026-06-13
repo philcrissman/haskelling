@@ -1,0 +1,11 @@
+{
+  "order": 3,
+  "title": "Recursive Take",
+  "learning_objective": "Implement take' recursively, returning the first n elements of a list.",
+  "hints": [
+    "See the take' example in LYAH — Recursion.",
+    "Two base cases: taking 0 or fewer gives [], and taking from [] gives [].",
+    "Recursive case: keep the head and take' (n - 1) from the tail."
+  ],
+  "date_added": "2026-06-12"
+}
