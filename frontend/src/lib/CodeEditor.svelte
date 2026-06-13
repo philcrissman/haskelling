@@ -89,8 +89,12 @@
     overflow: hidden;
   }
 
+  /* Apply the min-height to the themed .cm-editor element itself (it inherits
+     the value the page sets on .editor), so the oneDark background fills the
+     whole box even when the document has only a few lines. The editor still
+     grows past this height for longer documents. */
   .editor :global(.cm-editor) {
-    height: 100%;
+    min-height: inherit;
   }
 
   .editor :global(.cm-scroller) {
