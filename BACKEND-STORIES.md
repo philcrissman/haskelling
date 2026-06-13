@@ -716,3 +716,28 @@ An admin-gated endpoint backing the dashboard: list all registered users with a 
 - [ ] Sensible default ordering (e.g. most-recently-active first)
 
 **Deferred — post-launch.**
+
+---
+
+## Multi-file exercises (post-launch)
+
+### BE-31: Multi-file exercise support (issue #90)
+
+**Size:** L
+
+**Description:**
+Enable exercises with more than one editable Haskell file, so a learner can write a module in one file and use it from another. This unblocks **LYAH ch. 7 (Modules)**, skipped during the LYAH curriculum build because the single-file harness can't express "write your own module and import it."
+
+Judge0 is not the blocker: `backend/src/Judge0.hs` already ships the user's solution to Judge0 as a base64 zip via `additional_files` (`makeAdditionalFiles`), alongside the hidden test runner in `source_code`, and GHC compiles them together. Additional user files are just more zip entries. The work is in our layers: the `Exercise` data model (currently a single `stubCode`/`canonicalSolution`), the curriculum file format (declare additional editable files), and the `/submit` API (accept multiple files, stay backward compatible with the single `code` field).
+
+**Depends on:** —
+
+**Acceptance criteria:**
+- [ ] An exercise can define N editable files; single-file exercises are unaffected
+- [ ] Seed loads multi-file exercises from the curriculum format
+- [ ] `/submit` accepts multiple files and packs them all into Judge0's `additional_files`
+- [ ] Hidden tests can import any of the user's modules
+- [ ] API fields are camelCase; existing single-file submissions still work
+- [ ] At least one ch. 7 (Modules) exercise exists end-to-end as proof
+
+**Deferred — post-launch.** Pairs with FE-37.

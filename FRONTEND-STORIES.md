@@ -513,3 +513,23 @@ Gate the route and nav entry on the `role` field from `GET /api/me` (BE-28). UI 
 - [ ] Loading and error states match the patterns established in FE-16/FE-17
 
 **Deferred — post-launch.**
+
+---
+
+### FE-37: Multi-file editor UI (issue #91)
+
+**Size:** M
+
+**Description:**
+Let an exercise with multiple editable files (BE-31) be edited in the UI — a tab bar above the editor, or a second `CodeEditor` pane — and submit all files together. Single-file exercises must look exactly as they do today. Extend the `haskelling:code:<id>` localStorage keying to be per-file, and make stub/reset and restore-from-history work per file.
+
+**Depends on:** BE-31
+
+**Acceptance criteria:**
+- [ ] Multi-file exercises show a tab/pane per file; switching preserves unsaved edits
+- [ ] Single-file exercises are visually unchanged
+- [ ] All files are submitted together and results render as today
+- [ ] Per-file localStorage persistence and history restore work
+- [ ] Reuses the editor min-height/theme fixes already in `CodeEditor.svelte`
+
+**Deferred — post-launch.**
