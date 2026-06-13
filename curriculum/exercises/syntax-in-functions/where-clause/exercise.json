@@ -1,0 +1,11 @@
+{
+  "order": 5,
+  "title": "Where Clause",
+  "learning_objective": "Use a where clause to compute a BMI once and share it across several guards.",
+  "hints": [
+    "See the \"Where!?\" section of LYAH — Syntax in Functions (the bmiTell example).",
+    "Define bmi in a where block: bmi = weight / height ^ 2.",
+    "The where binding is visible to every guard of the definition."
+  ],
+  "date_added": "2026-06-12"
+}

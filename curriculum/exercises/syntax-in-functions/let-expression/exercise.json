@@ -1,0 +1,11 @@
+{
+  "order": 6,
+  "title": "Let Expression",
+  "learning_objective": "Use a let expression to bind two intermediate values and combine them.",
+  "hints": [
+    "See the \"Let it be\" section of LYAH — Syntax in Functions.",
+    "let introduces bindings; in gives the expression that uses them.",
+    "Bind area and perimeter, then return area + perimeter."
+  ],
+  "date_added": "2026-06-12"
+}

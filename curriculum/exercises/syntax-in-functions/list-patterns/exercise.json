@@ -1,0 +1,11 @@
+{
+  "order": 3,
+  "title": "List Patterns",
+  "learning_objective": "Pattern match on a list to return its first element, or 0 when the list is empty.",
+  "hints": [
+    "See the list pattern matching examples in LYAH — Syntax in Functions.",
+    "[] matches the empty list; (x:_) matches a non-empty list and binds its head to x.",
+    "Write one equation for each case."
+  ],
+  "date_added": "2026-06-12"
+}

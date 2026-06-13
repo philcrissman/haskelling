@@ -1,0 +1,11 @@
+{
+  "order": 1,
+  "title": "Pattern Literals",
+  "learning_objective": "Define a function by pattern matching on specific Int values, with a catch-all for everything else.",
+  "hints": [
+    "See the \"Pattern matching\" section of LYAH — Syntax in Functions.",
+    "Write one equation per value you want to match, then a final equation using _ for the rest.",
+    "Haskell checks the equations from top to bottom, so put the catch-all last."
+  ],
+  "date_added": "2026-06-12"
+}

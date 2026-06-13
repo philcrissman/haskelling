@@ -76,13 +76,7 @@ data CurriculumExercise = CurriculumExercise
 chapterMeta :: Text -> (Text, Text)
 chapterMeta "starting-out"     = ("Starting Out",      "First steps in Haskell: arithmetic, booleans, functions, lists, ranges, list comprehensions, and tuples. Follows LYAH chapter 2.")
 chapterMeta "types-and-typeclasses" = ("Types and Typeclasses", "Reading types, polymorphism with type variables, and the core typeclasses: Eq, Ord, Show, Read, Enum, Bounded, and Num. Follows LYAH chapter 3.")
-chapterMeta "basics"           = ("Basics",           "Core Haskell syntax and fundamental concepts.")
-chapterMeta "functions"        = ("Functions",         "Lambdas, where clauses, let expressions, composition, and partial application.")
-chapterMeta "lists"            = ("Lists",             "Working with Haskell's built-in list type.")
-chapterMeta "types"            = ("Types",             "Haskell's type system, Maybe, and custom data types.")
-chapterMeta "pattern-matching" = ("Pattern Matching",  "Deconstructing values with pattern matching and case expressions.")
-chapterMeta "recursion"        = ("Recursion",         "Recursive functions and tail recursion.")
-chapterMeta "typeclasses"      = ("Type Classes",      "Haskell's typeclass system: Show, Eq, Functor, and more.")
+chapterMeta "syntax-in-functions" = ("Syntax in Functions", "Ways to write a function body: pattern matching, guards, where, let, and case expressions. Follows LYAH chapter 4.")
 chapterMeta slug               = (slug, "")
 
 -- Read lesson markdown for a chapter (returns empty string if file missing)
@@ -176,7 +170,8 @@ upsertExercise ce chapterId now = do
     Just (Entity key _) ->
       update
         key
-        [ ExerciseTitle             =. ceTitle ce
+        [ ExerciseChapterId         =. chapterId
+        , ExerciseTitle             =. ceTitle ce
         , ExerciseOrderInChapter    =. ceOrder ce
         , ExerciseLearningObjective =. ceLearningObjective ce
         , ExerciseStubCode          =. ceStubCode ce

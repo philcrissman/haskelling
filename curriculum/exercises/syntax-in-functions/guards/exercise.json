@@ -1,0 +1,11 @@
+{
+  "order": 4,
+  "title": "Guards",
+  "learning_objective": "Use guards to return a letter grade based on which score range the argument falls in.",
+  "hints": [
+    "See the \"Guards, guards!\" section of LYAH — Syntax in Functions.",
+    "Each guard starts with | followed by a Bool condition; the first true one wins.",
+    "Use otherwise as the final guard to cover everything else."
+  ],
+  "date_added": "2026-06-12"
+}

@@ -1,0 +1,11 @@
+{
+  "order": 2,
+  "title": "Tuple Patterns",
+  "learning_objective": "Add two 2D vectors by pattern matching on their tuple components.",
+  "hints": [
+    "See the tuple pattern matching examples in LYAH — Syntax in Functions (addVectors).",
+    "Match both arguments at once: (x1, y1) and (x2, y2).",
+    "Return a new pair whose components are the sums."
+  ],
+  "date_added": "2026-06-12"
+}

@@ -1,0 +1,11 @@
+{
+  "order": 7,
+  "title": "Case Expression",
+  "learning_objective": "Use a case expression to describe a list by matching on its shape.",
+  "hints": [
+    "See the \"Case expressions\" section of LYAH — Syntax in Functions (describeList).",
+    "case xs of lets you match [], [x], and a catch-all _ inline.",
+    "Concatenate the fixed prefix with the result of the case."
+  ],
+  "date_added": "2026-06-12"
+}
