@@ -1,0 +1,11 @@
+{
+  "order": 5,
+  "title": "Fold Right",
+  "learning_objective": "Sum a list of integers using foldr.",
+  "hints": [
+    "See the \"Folds\" section of LYAH — Higher Order Functions.",
+    "foldr takes a combining function, a starting accumulator, and a list.",
+    "Use (+) as the combiner and 0 as the starting accumulator: foldr (+) 0 xs."
+  ],
+  "date_added": "2026-06-12"
+}

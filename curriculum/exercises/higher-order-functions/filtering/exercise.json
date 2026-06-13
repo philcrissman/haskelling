@@ -1,0 +1,11 @@
+{
+  "order": 3,
+  "title": "Filtering",
+  "learning_objective": "Use filter to keep only the even numbers in a list.",
+  "hints": [
+    "See the \"Maps and filters\" section of LYAH — Higher Order Functions.",
+    "filter keeps the elements for which a predicate returns True: filter p xs.",
+    "The predicate even tests whether a number is even."
+  ],
+  "date_added": "2026-06-12"
+}

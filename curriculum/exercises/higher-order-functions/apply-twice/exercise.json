@@ -1,0 +1,11 @@
+{
+  "order": 1,
+  "title": "Apply Twice",
+  "learning_objective": "Write a higher-order function that applies a given function to a value twice.",
+  "hints": [
+    "See the applyTwice example in LYAH — Higher Order Functions.",
+    "The type (a -> a) -> a -> a means the first argument is itself a function.",
+    "Apply f to x, then apply f to that result: f (f x)."
+  ],
+  "date_added": "2026-06-12"
+}

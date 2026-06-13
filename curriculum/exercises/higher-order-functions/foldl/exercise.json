@@ -1,0 +1,11 @@
+{
+  "order": 6,
+  "title": "Fold Left",
+  "learning_objective": "Reverse a list using foldl with a lambda that builds up an accumulator.",
+  "hints": [
+    "See the \"Folds\" section of LYAH — Higher Order Functions.",
+    "foldl threads an accumulator from the left: foldl f acc xs.",
+    "Cons each element onto the front of the accumulator: \\acc x -> x : acc, starting from []."
+  ],
+  "date_added": "2026-06-12"
+}

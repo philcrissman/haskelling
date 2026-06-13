@@ -1,0 +1,11 @@
+{
+  "order": 7,
+  "title": "Function Composition",
+  "learning_objective": "Use function composition to count how many numbers in a list are even.",
+  "hints": [
+    "See the \"Function composition\" section of LYAH — Higher Order Functions.",
+    "(.) chains functions: (f . g) x is f (g x).",
+    "Filter the evens, then take the length: length . filter even."
+  ],
+  "date_added": "2026-06-12"
+}

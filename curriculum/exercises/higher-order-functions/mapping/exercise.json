@@ -1,0 +1,11 @@
+{
+  "order": 2,
+  "title": "Mapping",
+  "learning_objective": "Use map to square every element of a list.",
+  "hints": [
+    "See the \"Maps and filters\" section of LYAH — Higher Order Functions.",
+    "map applies a function to each element: map f [1,2,3].",
+    "You can square with the section (^ 2)."
+  ],
+  "date_added": "2026-06-12"
+}

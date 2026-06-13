@@ -1,0 +1,11 @@
+{
+  "order": 4,
+  "title": "Lambdas",
+  "learning_objective": "Use map with a lambda that multiplies each element by n.",
+  "hints": [
+    "See the \"Lambdas\" section of LYAH — Higher Order Functions.",
+    "A lambda is written \\x -> ...; it can refer to n from the surrounding function.",
+    "Map the lambda over the list: map (\\x -> x * n) xs."
+  ],
+  "date_added": "2026-06-12"
+}
