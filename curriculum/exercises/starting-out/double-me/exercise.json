@@ -1,0 +1,11 @@
+{
+  "order": 1,
+  "title": "Double Me",
+  "learning_objective": "Define a function that doubles an Int by adding it to itself.",
+  "hints": [
+    "See the \"Ready, set, go!\" section of LYAH — Starting Out for basic arithmetic.",
+    "You can double a number without using *2 — just add it to itself with +.",
+    "Replace undefined with an expression that combines x with itself."
+  ],
+  "date_added": "2026-06-12"
+}

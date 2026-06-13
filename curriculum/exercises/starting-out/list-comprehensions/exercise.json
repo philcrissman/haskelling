@@ -1,0 +1,11 @@
+{
+  "order": 6,
+  "title": "List Comprehensions",
+  "learning_objective": "Use a list comprehension with a predicate to keep only the multiples of 3 from a list.",
+  "hints": [
+    "See the \"I'm a list comprehension\" section of LYAH — Starting Out.",
+    "A predicate goes after a comma: [x | x <- xs, <condition>].",
+    "A number is a multiple of 3 when x `mod` 3 == 0."
+  ],
+  "date_added": "2026-06-12"
+}

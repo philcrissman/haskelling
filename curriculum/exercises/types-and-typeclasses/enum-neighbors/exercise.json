@@ -1,0 +1,11 @@
+{
+  "order": 3,
+  "title": "Enum Neighbors",
+  "learning_objective": "Use pred and succ from the Enum typeclass to find the characters before and after a character.",
+  "hints": [
+    "See the Enum typeclass in LYAH — Types and Typeclasses.",
+    "succ gives the next value in the sequence; pred gives the previous one.",
+    "Return both as a pair: (pred c, succ c)."
+  ],
+  "date_added": "2026-06-12"
+}

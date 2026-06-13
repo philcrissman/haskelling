@@ -1,0 +1,11 @@
+{
+  "order": 2,
+  "title": "Comparing Values",
+  "learning_objective": "Use the Ord typeclass's compare function to return an Ordering (LT, EQ, or GT).",
+  "hints": [
+    "See the Ord typeclass in the \"Typeclasses 101\" section of LYAH — Types and Typeclasses.",
+    "compare takes two values and returns an Ordering: LT, EQ, or GT.",
+    "Compare the argument against 10: compare x 10."
+  ],
+  "date_added": "2026-06-12"
+}

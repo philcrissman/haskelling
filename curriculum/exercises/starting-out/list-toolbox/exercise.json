@@ -1,0 +1,11 @@
+{
+  "order": 4,
+  "title": "List Toolbox",
+  "learning_objective": "Remove the first and last elements of a list using tail and init.",
+  "hints": [
+    "See the list functions in LYAH — Starting Out: tail drops the first element, init drops the last.",
+    "tail [1,2,3,4] is [2,3,4]; init [2,3,4] is [2,3].",
+    "Apply one to the result of the other: init (tail xs)."
+  ],
+  "date_added": "2026-06-12"
+}

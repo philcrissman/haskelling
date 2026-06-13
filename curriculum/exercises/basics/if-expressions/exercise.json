@@ -7,5 +7,5 @@
     "The syntax is: if <condition> then <value-if-true> else <value-if-false>",
     "To negate n, write -n. You may need parentheses when passing it to functions: (-n)."
   ],
-  "date_added": "2026-05-24"
+  "date_added": null
 }

@@ -1,0 +1,11 @@
+{
+  "order": 5,
+  "title": "Show Values",
+  "learning_objective": "Use show from the Show typeclass to turn an Int into part of a String message.",
+  "hints": [
+    "See the Show typeclass in LYAH — Types and Typeclasses.",
+    "show converts a value into its String representation: show 42 is \"42\".",
+    "Join the pieces with ++: \"The number is \" ++ show n."
+  ],
+  "date_added": "2026-06-12"
+}

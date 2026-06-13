@@ -74,6 +74,8 @@ data CurriculumExercise = CurriculumExercise
 -- Chapter metadata: (title, description)
 
 chapterMeta :: Text -> (Text, Text)
+chapterMeta "starting-out"     = ("Starting Out",      "First steps in Haskell: arithmetic, booleans, functions, lists, ranges, list comprehensions, and tuples. Follows LYAH chapter 2.")
+chapterMeta "types-and-typeclasses" = ("Types and Typeclasses", "Reading types, polymorphism with type variables, and the core typeclasses: Eq, Ord, Show, Read, Enum, Bounded, and Num. Follows LYAH chapter 3.")
 chapterMeta "basics"           = ("Basics",           "Core Haskell syntax and fundamental concepts.")
 chapterMeta "functions"        = ("Functions",         "Lambdas, where clauses, let expressions, composition, and partial application.")
 chapterMeta "lists"            = ("Lists",             "Working with Haskell's built-in list type.")

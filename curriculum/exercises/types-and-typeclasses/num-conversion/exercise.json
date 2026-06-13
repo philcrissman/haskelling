@@ -1,0 +1,11 @@
+{
+  "order": 7,
+  "title": "Number Conversion",
+  "learning_objective": "Use fromIntegral to convert an Int into a Double.",
+  "hints": [
+    "See the discussion of Num and fromIntegral in LYAH — Types and Typeclasses.",
+    "Int and Double are different types; you can't mix them directly.",
+    "fromIntegral turns an integral number into a more general numeric type."
+  ],
+  "date_added": "2026-06-12"
+}

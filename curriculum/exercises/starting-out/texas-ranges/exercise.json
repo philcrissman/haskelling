@@ -1,0 +1,11 @@
+{
+  "order": 5,
+  "title": "Texas Ranges",
+  "learning_objective": "Use a range with a step to produce the even numbers from 2 up to n (inclusive).",
+  "hints": [
+    "See the \"Texas ranges\" section of LYAH — Starting Out.",
+    "Specify a step by listing the first two elements: [2, 4 .. n].",
+    "If n is less than 2 the range is naturally empty — you don't need a special case."
+  ],
+  "date_added": "2026-06-12"
+}

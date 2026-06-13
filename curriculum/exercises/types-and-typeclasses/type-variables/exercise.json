@@ -1,0 +1,11 @@
+{
+  "order": 1,
+  "title": "Type Variables",
+  "learning_objective": "Write a polymorphic function whose type uses type variables to swap the two elements of a pair.",
+  "hints": [
+    "See the \"Type variables\" section of LYAH — Types and Typeclasses.",
+    "The type (a, b) -> (b, a) means it works for a pair of any two types.",
+    "You can get the parts of a pair with fst and snd from the previous chapter."
+  ],
+  "date_added": "2026-06-12"
+}

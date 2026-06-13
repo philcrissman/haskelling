@@ -1,0 +1,11 @@
+{
+  "order": 7,
+  "title": "Tuples and Zip",
+  "learning_objective": "Combine two lists into a list of pairs using zip.",
+  "hints": [
+    "See the \"Tuples\" section of LYAH — Starting Out.",
+    "zip takes two lists and pairs up their elements: zip [1,2,3] \"abc\".",
+    "zip stops at the end of the shorter list, so you don't need to handle length differences."
+  ],
+  "date_added": "2026-06-12"
+}

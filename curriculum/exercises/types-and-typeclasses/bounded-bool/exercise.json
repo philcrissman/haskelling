@@ -1,0 +1,11 @@
+{
+  "order": 4,
+  "title": "Bounded Bool",
+  "learning_objective": "Use minBound and maxBound from the Bounded typeclass to produce the smallest and largest Bool.",
+  "hints": [
+    "See the Bounded typeclass in LYAH — Types and Typeclasses.",
+    "minBound and maxBound are polymorphic constants; the type signature fixes them to Bool here.",
+    "Return them as a pair: (minBound, maxBound)."
+  ],
+  "date_added": "2026-06-12"
+}

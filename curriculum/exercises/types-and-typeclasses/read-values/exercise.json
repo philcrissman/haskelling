@@ -1,0 +1,11 @@
+{
+  "order": 6,
+  "title": "Read Values",
+  "learning_objective": "Use read from the Read typeclass to parse a String into an Int.",
+  "hints": [
+    "See the Read typeclass in LYAH — Types and Typeclasses.",
+    "read is the opposite of show: it parses a String into a value.",
+    "read needs to know the target type; here the return type Int tells it what to produce."
+  ],
+  "date_added": "2026-06-12"
+}

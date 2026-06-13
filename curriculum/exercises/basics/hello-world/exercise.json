@@ -7,5 +7,5 @@
     "greet takes no arguments — replace undefined directly with the string.",
     "The exact string is \"Hello, World!\" — capital H, capital W, comma and space after Hello, exclamation mark at the end."
   ],
-  "date_added": "2026-05-24"
+  "date_added": null
 }

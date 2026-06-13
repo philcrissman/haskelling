@@ -1,0 +1,11 @@
+{
+  "order": 2,
+  "title": "Boolean Logic",
+  "learning_objective": "Define a function that returns True when exactly one of two Bool arguments is True, using &&, ||, and not.",
+  "hints": [
+    "See the booleans part of \"Ready, set, go!\" in LYAH — Starting Out: &&, ||, and not.",
+    "\"Exactly one\" means at least one is True AND they are not both True.",
+    "Try combining (a || b) with not (a && b)."
+  ],
+  "date_added": "2026-06-12"
+}

@@ -1,0 +1,11 @@
+{
+  "order": 3,
+  "title": "Building Lists",
+  "learning_objective": "Add an element to both the front and back of a list using : (cons) and ++ (append).",
+  "hints": [
+    "See the lists section of LYAH — Starting Out: : prepends a single element, ++ joins two lists.",
+    "To put x at the back, append a one-element list: xs ++ [x].",
+    "Combine both: x : xs ++ [x]."
+  ],
+  "date_added": "2026-06-12"
+}
