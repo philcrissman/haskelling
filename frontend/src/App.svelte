@@ -5,6 +5,7 @@
   import ExercisePage from './lib/ExercisePage.svelte';
   import LessonPage from './lib/LessonPage.svelte';
   import { getExercises, ApiError } from './api';
+  import { trackPageview } from './lib/analytics';
   import type { Chapter, Exercise } from './types';
 
   type Theme = 'light' | 'dark';
@@ -107,8 +108,9 @@
   }
 
   onMount(async () => {
-    applyHash(window.location.hash);
-    window.addEventListener('hashchange', () => applyHash(window.location.hash));
+    const onRoute = () => { applyHash(window.location.hash); trackPageview(); };
+    onRoute();
+    window.addEventListener('hashchange', onRoute);
 
     await initClerk();
     clerkReady = true;
