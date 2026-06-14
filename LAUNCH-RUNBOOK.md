@@ -17,7 +17,9 @@ Clerk *production* instances are bound to your domain, so **register the domain 
 - `flyctl` authenticated locally (`flyctl auth login`) and Netlify CLI or dashboard access.
 
 ## 1. Register a domain
-Pick and register one (e.g. `haskelling.dev`). Decide the canonical host — apex `haskelling.dev` or `www.haskelling.dev`. The rest of this doc assumes apex `haskelling.dev`.
+**Chosen: `haskell.ing`** (registered at Hover). It's a domain hack — the brand spans the dot — so the canonical host is the **apex** `haskell.ing`; there's no sensible `www`. Two DNS notes for an apex on Hover + Netlify:
+- An apex domain **can't be a CNAME** (DNS rule). Two options: (a) keep DNS at **Hover** and point the apex with an **A record** to Netlify's load balancer IP (the value Netlify shows you, currently `75.2.60.5`); or (b) delegate to **Netlify DNS** (move nameservers) and manage everything — including Clerk's records — in Netlify. Keeping DNS at Hover is usually simpler since it's already set up.
+- Either way, the same DNS zone also holds the Clerk subdomain records from step 2; they coexist fine (different names).
 
 ## 2. Clerk production instance (INFRA-19) — domain-bound
 1. Clerk dashboard → create a **Production** instance for the app.
@@ -28,16 +30,16 @@ Pick and register one (e.g. `haskelling.dev`). Decide the canonical host — ape
 ## 3. Custom GitHub OAuth App (INFRA-18) — wire into the *production* instance
 1. GitHub → Settings → Developer settings → OAuth Apps → **New OAuth App**
    - Application name: **Haskelling**
-   - Homepage URL: `https://haskelling.dev`
+   - Homepage URL: `https://haskell.ing`
    - Authorization callback URL: copy from Clerk → **Production** instance → Configure → SSO connections → GitHub → "Use custom credentials" → Authorized redirect URI.
 2. Generate a client secret.
 3. Clerk (Production) → GitHub connection → **Use custom credentials** → paste Client ID + Secret → Save.
 4. The GitHub consent screen should now read "**Haskelling** is requesting access."
 
 ## 4. Point the domain at Netlify (INFRA-20, frontend)
-1. Netlify → Site → Domain management → **Add custom domain** `haskelling.dev`.
-2. At the registrar, add the DNS records Netlify specifies (Netlify DNS, or an `ALIAS`/`A` to Netlify's load balancer + `CNAME` for `www`). **Coexist with the Clerk records from step 2** — different subdomains, no conflict.
-3. Let Netlify provision the Let's Encrypt certificate. Verify `https://haskelling.dev` loads.
+1. Netlify → Site → Domain management → **Add custom domain** `haskell.ing`.
+2. Add the records Netlify specifies — for the apex `haskell.ing` that's an **A record** to Netlify's load balancer IP (apex can't be a CNAME; see step 1). **These coexist with the Clerk records from step 2** — different names, no conflict.
+3. Let Netlify provision the Let's Encrypt certificate. Verify `https://haskell.ing` loads.
 
 ## 5. Update config + redeploy
 Repo / CLI changes (the parts touching this codebase):
@@ -50,17 +52,17 @@ Repo / CLI changes (the parts touching this codebase):
   ```
   (This restarts the app. The backend derives the JWKS URL + issuer from the publishable key automatically — no code change needed.)
 - **Netlify env** (frontend) — set `VITE_CLERK_PUBLISHABLE_KEY=pk_live_…`, then **trigger a rebuild** (Vite inlines it at build time).
-- **`index.html`** — update `og:url` to `https://haskelling.dev` (currently `https://haskelling.netlify.app`). Small repo edit + push.
+- **`index.html`** — update `og:url` to `https://haskell.ing` (currently `https://haskelling.netlify.app`). Small repo edit + push.
 - **`netlify.toml`** — no change needed; the `/api/*` → `haskelling-app.fly.dev` proxy still works under the new frontend domain. (Only change it if you also put a custom domain on the *backend*.)
 
 ## 6. Update Clerk allowed origins / redirects (INFRA-20)
-1. Clerk (Production) → add `https://haskelling.dev` (and `www` if used) to allowed origins / redirect URLs.
+1. Clerk (Production) → add `https://haskell.ing` (and `www` if used) to allowed origins / redirect URLs.
 2. Confirm the dev instance keys are rotated/retired so they can't be used against production.
 
 ---
 
 ## Verification checklist
-- [ ] `https://haskelling.dev` loads over HTTPS with a valid cert
+- [ ] `https://haskell.ing` loads over HTTPS with a valid cert
 - [ ] GitHub sign-in completes from the new domain; consent screen says "Haskelling"
 - [ ] No Clerk "Development mode" banner
 - [ ] Submitting an exercise works end-to-end (auth → Judge0 → result)
@@ -71,4 +73,4 @@ Repo / CLI changes (the parts touching this codebase):
 
 ## Deferred (can trail a soft launch)
 - INFRA-13 secrets docs · INFRA-14 uptime monitoring · INFRA-16 error alerting · INFRA-15 Judge0 usage tracking
-- BE-26 follow-up: pin the JWT `azp` (authorized party) to `https://haskelling.dev` once the production origin is fixed (issuer pinning already shipped).
+- BE-26 follow-up: pin the JWT `azp` (authorized party) to `https://haskell.ing` once the production origin is fixed (issuer pinning already shipped).
