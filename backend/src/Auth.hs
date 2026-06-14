@@ -18,19 +18,32 @@ import Data.ByteString.Base64.URL qualified as B64URL
 import Data.ByteString.Lazy qualified as BSL
 import Data.IORef
 import Data.Maybe (listToMaybe)
+import Data.Time (NominalDiffTime, UTCTime, diffUTCTime, getCurrentTime)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
 import Network.HTTP.Client
 import Network.HTTP.Client.TLS (tlsManagerSettings)
 
--- | Holds JWKS URL, Clerk secret key, cached JWK set, and HTTP manager.
+-- | Holds JWKS URL, expected token issuer, Clerk secret key, cached JWK set
+-- (with the time it was fetched), and HTTP manager.
 data AuthEnv = AuthEnv
   { authJwksUrl   :: Text
+  , authIssuer    :: Text
   , authSecretKey :: Text
-  , authJwkCache  :: IORef (Maybe JWKSet)
+  , authJwkCache  :: IORef (Maybe (JWKSet, UTCTime))
   , authManager   :: Manager
   }
+
+-- | Proactively re-fetch the JWK set once it is older than this.
+jwksTtl :: NominalDiffTime
+jwksTtl = 3600  -- 1 hour
+
+-- | Lower bound between forced re-fetches triggered by verification failures.
+-- Bounds JWKS traffic when bad tokens arrive in bursts, while still recovering
+-- from a Clerk key rotation within this window.
+jwksMinRefetch :: NominalDiffTime
+jwksMinRefetch = 60  -- 1 minute
 
 -- | User info fetched from Clerk's management API after first sign-in.
 data ClerkUser = ClerkUser
@@ -104,24 +117,39 @@ newAuthEnv :: Text -> Text -> IO AuthEnv
 newAuthEnv jwksUrl secretKey = do
   mgr <- newManager tlsManagerSettings
   ref <- newIORef Nothing
+  -- Clerk's token issuer is the instance domain without the JWKS path,
+  -- e.g. https://example.clerk.accounts.dev
+  let issuer = maybe jwksUrl id (T.stripSuffix "/.well-known/jwks.json" jwksUrl)
   pure AuthEnv
     { authJwksUrl   = jwksUrl
+    , authIssuer    = issuer
     , authSecretKey = secretKey
     , authJwkCache  = ref
     , authManager   = mgr
     }
 
-getJwks :: AuthEnv -> IO (Either Text JWKSet)
-getJwks env = do
+-- | Return the JWK set, re-fetching when absent, stale (older than 'jwksTtl'),
+-- or when @force@ is set. On a fetch failure we fall back to the stale cached
+-- set if we have one, so a transient network blip does not break all auth.
+getJwks :: AuthEnv -> Bool -> IO (Either Text JWKSet)
+getJwks env force = do
+  now    <- getCurrentTime
   cached <- readIORef (authJwkCache env)
-  case cached of
+  let usable = case cached of
+        Just (jwks, fetchedAt)
+          | not force && diffUTCTime now fetchedAt < jwksTtl -> Just jwks
+        _ -> Nothing
+  case usable of
     Just jwks -> pure (Right jwks)
     Nothing   -> do
       result <- fetchJwks (authManager env) (authJwksUrl env)
       case result of
-        Right jwks -> writeIORef (authJwkCache env) (Just jwks)
-        _          -> pure ()
-      pure result
+        Right jwks -> do
+          writeIORef (authJwkCache env) (Just (jwks, now))
+          pure (Right jwks)
+        Left err -> pure $ case cached of
+          Just (jwks, _) -> Right jwks
+          Nothing        -> Left err
 
 fetchJwks :: Manager -> Text -> IO (Either Text JWKSet)
 fetchJwks mgr url = do
@@ -136,27 +164,51 @@ fetchJwks mgr url = do
       Right jwks -> Right jwks
 
 -- | Validate a Bearer token. Returns the Clerk user ID on success.
+--
+-- If verification fails with the cached keys we re-fetch the JWKS once (bounded
+-- by 'jwksMinRefetch') and retry, so a Clerk signing-key rotation recovers
+-- automatically instead of breaking every login until the next deploy.
 validateToken :: AuthEnv -> Text -> IO (Either Text Text)
 validateToken env token = do
-  ejwks <- getJwks env
-  case ejwks of
-    Left err   -> pure (Left ("JWKS error: " <> err))
-    Right jwks -> do
-      result <- runExceptT (verify jwks) :: IO (Either JWTError ClaimsSet)
-      pure $ case result of
-        Left  err    -> Left (T.pack (show err))
-        Right claims -> extractSub claims
+  r1 <- attempt False
+  case r1 of
+    Right sub -> pure (Right sub)
+    Left  e1  -> do
+      now    <- getCurrentTime
+      cached <- readIORef (authJwkCache env)
+      let stale = case cached of
+            Just (_, fetchedAt) -> diffUTCTime now fetchedAt >= jwksMinRefetch
+            Nothing             -> True
+      if stale then attempt True else pure (Left e1)
   where
-    verify jwks = do
+    attempt force = do
+      ejwks <- getJwks env force
+      case ejwks of
+        Left err   -> pure (Left ("JWKS error: " <> err))
+        Right jwks -> do
+          result <- runExceptT (verifyTok jwks) :: IO (Either JWTError ClaimsSet)
+          pure $ case result of
+            Left  err    -> Left (T.pack (show err))
+            Right claims -> checkClaims env claims
+    verifyTok keys = do
       jwt <- decodeCompact (BSL.fromStrict (TE.encodeUtf8 token))
-      verifyClaims (defaultJWTValidationSettings (const True)) jwks jwt
+      verifyClaims (defaultJWTValidationSettings (const True)) keys jwt
 
--- Extract the "sub" claim as Text using aeson roundtrip (avoids lens dependency on StringOrURI).
-extractSub :: ClaimsSet -> Either Text Text
-extractSub claims =
-  case parseMaybe (withObject "ClaimsSet" (.: "sub")) =<< (decode (encode claims) :: Maybe Value) of
-    Just t  -> Right t
-    Nothing -> Left "missing sub claim in JWT"
+-- Extract the "sub" claim and confirm the "iss" claim matches the expected
+-- Clerk issuer, so a validly-signed token from a different instance is rejected.
+-- Uses an aeson roundtrip (avoids a lens dependency on StringOrURI).
+checkClaims :: AuthEnv -> ClaimsSet -> Either Text Text
+checkClaims env claims =
+  case decode (encode claims) :: Maybe Value of
+    Just (Object o) -> do
+      sub <- note "missing sub claim in JWT" (parseMaybe (.: "sub") o)
+      iss <- note "missing iss claim in JWT" (parseMaybe (.: "iss") o)
+      if iss == authIssuer env
+        then Right sub
+        else Left "unexpected token issuer"
+    _ -> Left "could not parse JWT claims"
+  where
+    note msg = maybe (Left msg) Right
 
 -- | Fetch user details from Clerk's management API.
 fetchClerkUser :: AuthEnv -> Text -> IO (Either Text ClerkUser)
