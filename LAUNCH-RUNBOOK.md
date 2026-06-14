@@ -71,6 +71,12 @@ Repo / CLI changes (the parts touching this codebase):
 - [ ] Old `*.netlify.app` URL still works or redirects to the custom domain
 - [ ] Browser console is free of errors/warnings on the production build
 
+## Launch-day flip (do right before announcing)
+The app is in pre-launch cost-saving mode. Before driving real traffic:
+- [ ] **Set `min_machines_running = 1` in `fly.toml`** (currently `0` with `auto_stop_machines = "stop"`), commit + push. This keeps the backend warm so the first visitor doesn't hit a ~10–20s cold start (Fly boot + app start + re-seed + Neon wake). Neon still autosuspends regardless, since `/health` is DB-free — so this affects Fly cost only, not the DB. Tracked separately as a reminder issue.
+
+Status as of 2026-06-14: domain, cert, production Clerk, GitHub branding, key swap, and end-to-end sign-in + submit are all **verified working**. Launch is being held only to review/edit exercise content first.
+
 ## Deferred (can trail a soft launch)
 - INFRA-13 secrets docs · INFRA-14 uptime monitoring · INFRA-16 error alerting · INFRA-15 Judge0 usage tracking
 - BE-26 follow-up: pin the JWT `azp` (authorized party) to `https://haskell.ing` once the production origin is fixed (issuer pinning already shipped).
