@@ -27,7 +27,7 @@
 <nav class="sidebar" aria-label="Exercise navigation">
   <div class="sidebar-header">
     <span class="site-title">Haskelling</span>
-    <span class="site-tagline">Learn Haskell by doing</span>
+    <span class="site-tagline">Learn you some Haskell</span>
   </div>
 
   <div class="chapter-list">

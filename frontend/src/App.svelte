@@ -29,7 +29,7 @@
       const ch = chapters.find(c => c.slug === currentLessonSlug);
       document.title = ch ? `${ch.title} — Haskelling` : 'haskelling';
     } else {
-      document.title = 'Haskelling — Learn Haskell by doing';
+      document.title = 'Haskelling — Learn you some Haskell';
     }
   });
 
@@ -146,7 +146,7 @@
   <div class="sign-in-bg">
     <div class="sign-in-card">
       <h1 class="brand">Haskelling</h1>
-      <p class="tagline">Learn Haskell by doing</p>
+      <p class="tagline">Learn you some Haskell</p>
       <button class="sign-in-btn" onclick={handleSignIn}>
         Sign in with GitHub
       </button>
