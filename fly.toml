@@ -9,9 +9,12 @@ primary_region = "sjc"
 [http_service]
   internal_port = 8080
   force_https = true
-  auto_stop_machines = "off"
+  # Pre-launch: stop the machine when idle so it isn't billed (and so the
+  # Neon compute can autosuspend) — auto_start brings it back on the next
+  # request. Set min_machines_running = 1 at launch if cold starts matter.
+  auto_stop_machines = "stop"
   auto_start_machines = true
-  min_machines_running = 1
+  min_machines_running = 0
 
   [http_service.concurrency]
     type = "requests"
@@ -20,7 +23,7 @@ primary_region = "sjc"
 
 [[http_service.checks]]
   grace_period = "10s"
-  interval = "30s"
+  interval = "60s"
   method = "GET"
   path = "/health"
   timeout = "5s"

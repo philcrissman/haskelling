@@ -11,7 +11,6 @@ import Auth (AuthEnv)
 import Auth qualified
 import Control.Concurrent (forkIO, threadDelay)
 import Control.Concurrent.STM
-import Control.Exception (SomeException, try)
 import Control.Monad (forever, void, when)
 import Control.Monad.IO.Class (liftIO)
 import Data.Aeson (encode, object, (.=))
@@ -26,7 +25,7 @@ import Data.Text.Encoding qualified as TE
 import Data.Time (NominalDiffTime, UTCTime, diffUTCTime, getCurrentTime)
 import Database.Persist (Entity (..), SelectOpt (..), get, getBy, insert, insert_, selectList, update, (==.), (!=.), (=.))
 import Database.Persist.Postgresql (ConnectionPool, runSqlPool)
-import Database.Persist.Sql (SqlPersistT, Single (..), fromSqlKey, rawSql)
+import Database.Persist.Sql (SqlPersistT, fromSqlKey)
 import Judge0 (Judge0Config (..), Judge0Error (..), SubmissionResult (..), submitAndWait)
 import Network.HTTP.Types (statusCode, status429)
 import Network.Socket (SockAddr (..), hostAddressToTuple, hostAddress6ToTuple)
@@ -165,14 +164,12 @@ toChapterResponse (Entity _ ch) exs = ChapterResponse
 
 -- Handlers
 
-healthHandler :: ConnectionPool -> Handler HealthResponse
-healthHandler pool = do
-  result <- liftIO $ (try (runSqlPool (rawSql "SELECT 1" [] :: SqlPersistT IO [Single Int]) pool) :: IO (Either SomeException [Single Int]))
-  case result of
-    Left err -> do
-      liftIO $ putStrLn $ "health: db check failed: " <> show err
-      jsonError err503 "database unreachable" "db_error"
-    Right _ -> pure $ HealthResponse { status = "ok" }
+-- Liveness only: confirms the web process is serving. Deliberately does NOT
+-- touch the database. Fly health-checks this endpoint frequently, and a
+-- recurring query would keep Neon's compute from autosuspending — i.e. billed
+-- 24/7 even with no users.
+healthHandler :: Handler HealthResponse
+healthHandler = pure HealthResponse { status = "ok" }
 
 meHandler :: AuthEnv -> ConnectionPool -> Maybe Text -> Handler MeResponse
 meHandler authEnv pool mAuth = do
@@ -360,7 +357,7 @@ progressStatusToText Schema.Passed     = "passed"
 
 server :: Bool -> Judge0Config -> ConnectionPool -> AuthEnv -> RateLimiter -> Int -> Server API
 server showDraft cfg pool authEnv userLimiter rateLimitPerUser =
-  healthHandler pool
+  healthHandler
     :<|> meHandler authEnv pool
     :<|> (exercisesListHandler showDraft pool :<|> exerciseByIdHandler pool)
     :<|> submitHandler cfg pool authEnv userLimiter rateLimitPerUser
