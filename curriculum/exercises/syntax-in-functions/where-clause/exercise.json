@@ -1,11 +1,12 @@
 {
   "order": 5,
   "title": "Where Clause",
-  "learning_objective": "Use a where clause to compute a BMI once and share it across several guards.",
+  "learning_objective": "Use a where clause to compute a value once and reuse it across several guards (the exact BMI rules are in the starter code).",
   "hints": [
-    "See the \"Where!?\" section of LYAH — Syntax in Functions (the bmiTell example).",
-    "Define bmi in a where block: bmi = weight / height ^ 2.",
-    "The where binding is visible to every guard of the definition."
+    "A where block sits under the guards and binds names visible to all of them — define bmi = weight / height ^ 2 there so it's computed once.",
+    "Write one guard per threshold, in order (<= 18.5, then <= 25.0, then <= 30.0), with otherwise as the final catch-all.",
+    "Return the exact lowercase strings from the starter comment: \"underweight\", \"normal\", \"overweight\", \"obese\".",
+    "LYAH's \"Where!?\" section in Syntax in Functions covers how where bindings work."
   ],
   "date_added": "2026-06-12"
 }
